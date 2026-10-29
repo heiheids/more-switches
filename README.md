@@ -85,3 +85,6 @@ tools/                                           备份、打包、图标、语�
 ## 许可
 
 MIT，见 [LICENSE](LICENSE)。
+
+作者主页: <https://space.bilibili.com/19428259>  
+核心结构参考: <https://crates.io/crates/lighty-launcher>
