@@ -20,6 +20,8 @@ Java: 25
   第四行  关闭 Q 键丢弃物品
   第五行  禁用 F11 全屏
   第六行  关闭药水粒子效果
+  第七行  预览光照范围
+  第八行  移动光源
 
 功能变多以后，列表可以滚动：把鼠标放在列表上滚轮，或者点右侧滚动条
 两端的箭头、点滚动条轨道。装得下时滚动条会自动隐藏。
@@ -145,7 +147,38 @@ J 在原版里没有绑定任何功能，不会拿走任何键。
 其他粒子（火焰、烟、水花、爆炸、红石等）一律不受影响。
 
 
-十、多语言
+十、功能七: 预览光照范围
+----------------------------------------------------------------
+开启后: 手持火把等光源方块，看向某个位置时，以该位置为中心模拟"放下一支火把"，
+周围方块顶部会显示青色的光照等级数字。
+
+  · 只在模拟光源能照到的范围内显示（火把是 13 格）
+  · 只标注"确实会变亮"的方块：本来就比模拟光源更亮的地方不显示数字，
+    因为那里放火把也不会更亮
+  · 只标注上方是空气的方块，所以数字不会出现在实心岩层里
+
+数字的算法与游戏一致：每远一格减 1 级，火把（14 级）在 13 格外就没有光了。
+
+重点: 这只是显示，不放置任何方块，也不改变世界真实光照。
+关掉开关，数字立刻消失，世界一切照旧。
+
+
+十一、功能八: 移动光源
+----------------------------------------------------------------
+开启后: 手持火把等光源方块时，周围的方块表面会被"照亮"，并有自然的亮度衰减。
+
+  · 越靠近光源越亮，每远一格暗一级，和真实火把的衰减一样
+  · 已经比模拟光源更亮的地方不会再被提亮（光不会叠加）
+  · 位置跟着视线走：看向某处时以该处为中心，没看向任何地方时浮在身前，
+    所以它像"随身携带的光"而不是只能贴在墙上
+
+重点: 只在渲染时临时改变亮度，不写入世界光照数据，也不会影响怪物生成、
+作物生长或任何依赖光照的游戏逻辑。关掉开关，画面立刻恢复原样。
+
+说明: 这两项都只对手持的方块生效。手持非光源物品（石头、剑等）时没有任何效果。
+
+
+十二、多语言
 ----------------------------------------------------------------
 界面标题右侧有一个语言按钮，点一下循环切换:
 
@@ -163,7 +196,7 @@ J 在原版里没有绑定任何功能，不会拿走任何键。
 （早期版本曾在同一行同时显示中英文，英文界面下会残留中文，已修正。）
 
 
-十一、配置文件
+十三、配置文件
 ----------------------------------------------------------------
 路径: <游戏目录>/config/moreswitches.json
 
@@ -184,19 +217,21 @@ J 在原版里没有绑定任何功能，不会拿走任何键。
   · drop_key_lock: 功能四（关闭 Q 键丢弃物品）
   · fullscreen_key_lock: 功能五（禁用 F11 全屏）
   · effect_particles_off: 功能六（关闭药水粒子效果）
+  · light_preview: 功能七（预览光照范围）
+  · moving_light: 功能八（移动光源）
 
 可以直接用文本编辑器改，改完重启游戏生效。游戏里拨开关会立即
 覆盖这个文件，不需要手动改。
 
 
-十二、卸载
+十四、卸载
 ----------------------------------------------------------------
 从 mods 目录删除 more-switches-1.0.0.jar 即可。
 config/moreswitches.json 可以一并删除，也可以留着（不影响其他模组）。
 本模组不添加任何方块、物品、配方或世界数据，删除后存档完全不受影响。
 
 
-十三、常见问题
+十五、常见问题
 ----------------------------------------------------------------
 问: 按 J 没反应？
 答: 先确认界面里没有别的界面打开（聊天框、背包等）。J 只在没有任何
@@ -237,6 +272,8 @@ control on the right is a sliding switch: grey = off, green = on.
   Row 4  Disable Q Drop
   Row 5  Disable F11 Fullscreen
   Row 6  Hide Potion Particles
+  Row 7  Preview Light Range
+  Row 8  Moving Light
 
 The list scrolls once it no longer fits: use the wheel over the list, the arrows
 at the ends of the scrollbar, or click the track. The scrollbar hides itself when
@@ -372,7 +409,44 @@ Note: only status-effect particles are hidden — the swirl of an active potion
 particle (fire, smoke, splash water, explosions, redstone) is untouched.
 
 
-10. Language
+10. Switch 7 — Preview Light Range
+----------------------------------------------------------------
+On: holding a light-emitting block and looking at a spot, the surrounding block
+tops show cyan light-level numbers for a torch placed at that spot.
+
+  - only blocks the simulated source can reach are labelled (13 blocks for a torch)
+  - only blocks that would actually get brighter are labelled; a spot already
+    brighter than the simulated source gains nothing, so it is left unmarked
+  - only blocks with air above them, so numbers never appear inside solid rock
+
+The arithmetic matches the game: one level per block, so a torch (14) has no light
+13 blocks away.
+
+Important: this only draws numbers. No block is placed and the world's real light
+is untouched; turning the switch off makes the numbers disappear.
+
+
+11. Switch 8 — Moving Light
+----------------------------------------------------------------
+On: while holding a light source, the block surfaces around you are lit, with a
+natural falloff.
+
+  - brighter close to the source, one level darker per block, matching a real torch
+  - a spot already brighter than the simulated source is not brightened (light does
+    not stack)
+  - the position follows your view: a targeted spot becomes the centre, and with no
+    target the light floats just in front of you, so it behaves like a light you
+    carry rather than one that only works against a wall
+
+Important: brightness is only changed while rendering. Nothing is written to the
+world's light data, and mob spawning, crop growth and every other rule that reads
+light are unaffected. Turning the switch off restores the picture immediately.
+
+Note: both switches only act on the block in your hand. Holding something that does
+not emit light (stone, a sword) does nothing.
+
+
+12. Language
 ----------------------------------------------------------------
 The button at the right of the title cycles:
 
@@ -391,7 +465,7 @@ printed in the other language. (An earlier build showed both languages on one ro
 which left Chinese text on an English screen; that is fixed.)
 
 
-11. Configuration file
+13. Configuration file
 ----------------------------------------------------------------
 <game dir>/config/moreswitches.json
 
@@ -411,12 +485,14 @@ which left Chinese text on an English screen; that is fixed.)
   · drop_key_lock: switch 4
   · fullscreen_key_lock: switch 5
   · effect_particles_off: switch 6
+  · light_preview: switch 7
+  · moving_light: switch 8
 
 Edit it by hand if you like; changes apply on the next launch. Flipping a switch
 in game rewrites the file immediately.
 
 
-12. Uninstalling
+14. Uninstalling
 ----------------------------------------------------------------
 Delete more-switches-1.0.0.jar from the mods folder. config/moreswitches.json
 can be deleted too, or left in place (it does not affect other mods). The mod
@@ -424,7 +500,7 @@ adds no blocks, items, recipes or world data, so removing it cannot damage a
 save.
 
 
-13. FAQ
+15. FAQ
 ----------------------------------------------------------------
 Q: Pressing J does nothing.
 A: J only opens the screen when no other screen is open (chat, inventory, …),

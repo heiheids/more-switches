@@ -19,8 +19,9 @@
   Java              25（编译 release 25，toolchain 25）
   入口              main  : com.heishandashu.moreswitches.MoreSwitchesMod
                     client: com.heishandashu.moreswitches.client.MoreSwitchesClient
-  Mixin             4 个：MixinBedRule（公共侧）、MixinMultiPlayerGameMode、
-                    MixinMinecraftFullscreen 与 MixinClientLevelParticles（客户端侧）
+  Mixin             6 个：MixinBedRule（公共侧）、MixinMultiPlayerGameMode、
+                    MixinMinecraftFullscreen、MixinClientLevelParticles、
+                    MixinLightCoordsUtil 与 MixinLevelRendererLightPreview（客户端侧）
   依赖              除 Fabric API 外无第三方库
 
 Loom 配置要点: 26.x 的插件 id 是 net.fabricmc.fabric-loom（没有 -remap），
@@ -41,6 +42,9 @@ Loom 配置要点: 26.x 的插件 id 是 net.fabricmc.fabric-loom（没有 -rema
   drop/DropKeyRule                Q 键丢弃的判定（纯函数，可单测）
   fullscreen/FullscreenKeyRule    F11 全屏的判定（纯函数，可单测）
   effect/EffectParticleRule       药水粒子的判定（纯函数，可单测）
+  light/LightFalloff              模拟光的衰减算术（纯函数，可单测）
+  light/LightPreviewRule          两个光照开关的规则（纯函数，可单测）
+  light/HeldLight                 手持方块发光等级与到某方块的光照（公共侧，可单测）
   sleep/RainSleepRule             下雨可否睡觉的判定（纯函数，可单测）
   cooldown/FireworkGate           烟花冷却的门控行为（由 CooldownClock 组合）
   mixin/MixinBedRule              让"仅夜间可睡"在雨天成立
@@ -61,6 +65,9 @@ Loom 配置要点: 26.x 的插件 id 是 net.fabricmc.fabric-loom（没有 -rema
   mixin/MixinMinecraftFullscreen  功能五：拦 F11（只影响按键）
   feature/EffectParticleModule    功能六：状态与开关联动
   mixin/MixinClientLevelParticles 功能六：丢弃药水粒子
+  light/ClientHeldLight           功能七/八：光源位置（需要相机与准星，故在客户端源集）
+  mixin/MixinLightCoordsUtil      功能八：把模拟光并入方块光照
+  mixin/MixinLevelRendererLightPreview  功能七：世界空间绘制青色数字
   mixin/MixinMultiPlayerGameMode  功能二：唯一的注入点
   ui/SettingsScreen               设置界面
   ui/ToggleSwitchWidget           左右拨动开关控件
@@ -219,7 +226,43 @@ INSTANT_EFFECT（瞬间药水的爆裂）。火焰、烟、水花、爆炸、红
 ClientLevel.class 里，doAddParticle 方法开头确实出现了
 handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
 
-九、界面滚动
+九、功能七与功能八的实现（模拟光照）
+----------------------------------------------------------------
+这两个功能都不许改动世界真实光照，所以关键是"只改渲染时读到的东西"。
+
+26.3 里方块面的亮度是这样来的:
+  BlockModelLighter → LightCoordsUtil.getLightCoords(BrightnessGetter, 世界, 状态, 位置)
+  返回一个打包的 int: sky << 20 | block << 4
+  光照贴图只是 (方块光, 天空光) 的二维查找表，与位置无关。
+
+由此得出一个重要结论: 直接去改光照贴图，会让整个屏幕一起变亮，
+不可能形成"玩家身边一圈光"。所以移动光源必须在"每个方块位置"这一层做。
+
+功能八（移动光源）:
+  注入 LightCoordsUtil.getLightCoords 的 RETURN，用模拟值替换该位置的方块光:
+      int packed  = 原返回值
+      int existing = LightCoordsUtil.block(packed)
+      int simulated = 模拟光等级(该位置)
+      if (simulated > existing) 返回 LightCoordsUtil.withBlock(packed, simulated)
+  withBlock 只替换 block 位、保留 sky 位，所以天空光完全不受影响，
+  白天依然是白天，只是手里的火把额外照亮了近处。
+
+  为什么取 max 而不是相加: 原版里光不叠加，两支火把并排不会比一支更亮。
+  取 max 同时保证"本来就亮的地方"不会被模拟光照得比模拟光源本身还亮。
+
+功能七（预览光照范围）:
+  用 LevelRenderer.submitBlockOutline 的 RETURN（此时 collector 与相机状态都在手上），
+  遍历模拟光源能到达的立方体，对每个"上方是空气、且模拟光确实比现有方块光更亮"的方块，
+  用 submitText 提交一个青色数字。
+  只标"会变亮"的方块，因为标一个本来就更亮的地方会误导玩家。
+
+  数字在世界空间里朝向相机: PoseStack 平移到位 → 按相机偏航/俯仰旋转 → 缩放 0.025，
+  与名牌（name tag）同样的做法。用 submitText 而不是 submitNameTag，
+  因为名签自带白色背板，而需求要的是纯青色数字。
+
+两个功能的共同点: 都只读取设置与位置，从不写入 Level、光照引擎或存档。
+
+十、界面滚动
 ----------------------------------------------------------------
 功能从三个增加到五个后，320x180 下每行只剩 20px，只够一行文字，
 描述被挤没了。改法是让布局不再"把剩余空间均分给每一行":
@@ -238,7 +281,8 @@ handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
 滚轮滚动一行，点箭头滚一行，点轨道跳到该位置。滑块本身不做拖拽:
 拖拽需要一个捕获鼠标的子控件，这个界面刻意没有引入。
 
-单元测试: 20 个（冷却计时 6 + 烟花门控 4 + 雨天睡觉 4 + Q 键 2 + F11 2 + 药水粒子 2）。
+单元测试: 30 个（冷却计时 6 + 烟花门控 4 + 雨天睡觉 4 + Q 键 2 + F11 2 +
+药水粒子 2 + 光照衰减 7 + 光照规则 3）。
 
 九、多语言实现
 ----------------------------------------------------------------
@@ -291,6 +335,10 @@ Minecraft 的 Component.translatable 只能跟随游戏语言，无法实现
     并且 canSleep 的字节码确认已注入（导出的 BedRule.class 里能看到
     handler$xxx$moreswitches$allowSleepInRain 的调用）。也就是说
     "白天 + 下雨 → 允许入睡"这一条判定成立；仅差最后一步人工躺床。
+
+  · 两个光照开关：注入点已在运行时确认（导出的 LightCoordsUtil.class 与
+    LevelRenderer.class 里都有 handler 调用），衰减算术有 10 个单测覆盖；
+    未人工在游戏里手持火把逐格核对数字与实际观感。
 
   · 烟花冷却：同样在进程内实测到门控行为——
     第一次使用放行（false），第二次拦截（true），剩余 3 秒，

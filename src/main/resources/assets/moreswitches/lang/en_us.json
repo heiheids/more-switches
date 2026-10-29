@@ -24,5 +24,9 @@
   "moreswitches.switch.fullscreen_key_lock.name": "Disable F11 Fullscreen",
   "moreswitches.switch.fullscreen_key_lock.desc": "F11 no longer toggles fullscreen; the button in video settings still works.",
   "moreswitches.switch.effect_particles_off.name": "Hide Potion Particles",
-  "moreswitches.switch.effect_particles_off.desc": "Hides potion particles only; the effect itself is unchanged."
+  "moreswitches.switch.effect_particles_off.desc": "Hides potion particles only; the effect itself is unchanged.",
+  "moreswitches.switch.light_preview.name": "Preview Light Range",
+  "moreswitches.switch.light_preview.desc": "Holding a light source, shows cyan light levels on nearby block tops.",
+  "moreswitches.switch.moving_light.name": "Moving Light",
+  "moreswitches.switch.moving_light.desc": "Holding a torch lights the area around you with a soft falloff."
 }

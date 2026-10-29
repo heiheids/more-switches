@@ -7,7 +7,9 @@
   "client": [
     "MixinMultiPlayerGameMode",
     "MixinMinecraftFullscreen",
-    "MixinClientLevelParticles"
+    "MixinClientLevelParticles",
+    "MixinLightCoordsUtil",
+    "MixinLevelRendererLightPreview"
   ],
   "injectors": {
     "defaultRequire": 1

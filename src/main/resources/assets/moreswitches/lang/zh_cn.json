@@ -24,5 +24,9 @@
   "moreswitches.switch.fullscreen_key_lock.name": "禁用 F11 全屏",
   "moreswitches.switch.fullscreen_key_lock.desc": "按 F11 不再切换全屏；视频设置里的全屏按钮仍可使用。",
   "moreswitches.switch.effect_particles_off.name": "关闭药水粒子效果",
-  "moreswitches.switch.effect_particles_off.desc": "隐藏药水粒子，效果本身不变，只是眼前不再乱飞。"
+  "moreswitches.switch.effect_particles_off.desc": "隐藏药水粒子，效果本身不变，只是眼前不再乱飞。",
+  "moreswitches.switch.light_preview.name": "预览光照范围",
+  "moreswitches.switch.light_preview.desc": "手持光源并看向方块，用青色数字显示光照等级。",
+  "moreswitches.switch.moving_light.name": "移动光源",
+  "moreswitches.switch.moving_light.desc": "手持火把等光源时，周围会像被照亮一样有亮度渐变。"
 }

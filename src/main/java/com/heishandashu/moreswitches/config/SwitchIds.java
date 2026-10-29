@@ -28,13 +28,21 @@ public final class SwitchIds {
     /** Hide status-effect particles without touching the effects themselves. */
     public static final String EFFECT_PARTICLES_OFF = "effect_particles_off";
 
+    /** Draw light-level numbers for the block a held light source would light. */
+    public static final String LIGHT_PREVIEW = "light_preview";
+
+    /** Brighten the surroundings of a held light source, visually only. */
+    public static final String MOVING_LIGHT = "moving_light";
+
     private static final List<SwitchDefinition> ALL = List.of(
             new SwitchDefinition(WINDOW_LOCK, false),
             new SwitchDefinition(FIREWORK_COOLDOWN, false),
             new SwitchDefinition(RAIN_SLEEP, false),
             new SwitchDefinition(DROP_KEY_LOCK, false),
             new SwitchDefinition(FULLSCREEN_KEY_LOCK, false),
-            new SwitchDefinition(EFFECT_PARTICLES_OFF, false));
+            new SwitchDefinition(EFFECT_PARTICLES_OFF, false),
+            new SwitchDefinition(LIGHT_PREVIEW, false),
+            new SwitchDefinition(MOVING_LIGHT, false));
 
     private SwitchIds() {
     }

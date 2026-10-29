@@ -38,6 +38,8 @@ public final class ClientFeatures {
         DropKeyModule dropKey = new DropKeyModule();
         FullscreenKeyModule fullscreenKey = new FullscreenKeyModule();
         EffectParticleModule effectParticles = new EffectParticleModule();
+        LightModule lightPreview = new LightModule(SwitchIds.LIGHT_PREVIEW);
+        LightModule movingLight = new LightModule(SwitchIds.MOVING_LIGHT);
 
         MODULES.put(SwitchIds.WINDOW_LOCK, windowLock);
         MODULES.put(SwitchIds.FIREWORK_COOLDOWN, fireworkCooldown);
@@ -45,6 +47,8 @@ public final class ClientFeatures {
         MODULES.put(SwitchIds.DROP_KEY_LOCK, dropKey);
         MODULES.put(SwitchIds.FULLSCREEN_KEY_LOCK, fullscreenKey);
         MODULES.put(SwitchIds.EFFECT_PARTICLES_OFF, effectParticles);
+        MODULES.put(SwitchIds.LIGHT_PREVIEW, lightPreview);
+        MODULES.put(SwitchIds.MOVING_LIGHT, movingLight);
 
         for (SwitchDefinition definition : SwitchIds.all()) {
             ClientFeature feature = MODULES.get(definition.id());
