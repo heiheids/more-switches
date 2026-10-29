@@ -1,9 +1,6 @@
 MIT License
 
 Copyright (c) 2026 黑山大叔 (Heishan Dashu)
-Homepage: https://space.bilibili.com/19428259
-
-Core structure inspired by lighty-launcher (https://crates.io/crates/lighty-launcher).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,3 +19,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+作者主页: https://space.bilibili.com/19428259
+核心结构参考: https://crates.io/crates/lighty-launcher
