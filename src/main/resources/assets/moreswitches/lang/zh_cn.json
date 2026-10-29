@@ -28,5 +28,11 @@
   "moreswitches.switch.light_preview.name": "预览光照范围",
   "moreswitches.switch.light_preview.desc": "手持光源并看向方块，用青色数字显示光照等级。",
   "moreswitches.switch.moving_light.name": "移动光源",
-  "moreswitches.switch.moving_light.desc": "手持火把等光源时，周围会像被照亮一样有亮度渐变。"
+  "moreswitches.switch.moving_light.desc": "手持火把等光源时，周围会像被照亮一样有亮度渐变。",
+  "moreswitches.switch.resource_pack_warning_off.name": "关闭资源包警告",
+  "moreswitches.switch.resource_pack_warning_off.desc": "启用版本不匹配的资源包时不再弹确认框。",
+  "moreswitches.switch.campfire_smoke_off.name": "关闭篝火烟雾",
+  "moreswitches.switch.campfire_smoke_off.desc": "篝火不再冒烟，火焰与功能不受影响。",
+  "moreswitches.switch.tutorial_off.name": "关闭新手教程",
+  "moreswitches.switch.tutorial_off.desc": "不再弹出任何新手教程提示。"
 }

@@ -28,5 +28,11 @@
   "moreswitches.switch.light_preview.name": "Preview Light Range",
   "moreswitches.switch.light_preview.desc": "Holding a light source, shows cyan light levels on nearby block tops.",
   "moreswitches.switch.moving_light.name": "Moving Light",
-  "moreswitches.switch.moving_light.desc": "Holding a torch lights the area around you with a soft falloff."
+  "moreswitches.switch.moving_light.desc": "Holding a torch lights the area around you with a soft falloff.",
+  "moreswitches.switch.resource_pack_warning_off.name": "Skip Pack Warning",
+  "moreswitches.switch.resource_pack_warning_off.desc": "Enabling a version-mismatched resource pack no longer asks for confirmation.",
+  "moreswitches.switch.campfire_smoke_off.name": "No Campfire Smoke",
+  "moreswitches.switch.campfire_smoke_off.desc": "Campfires stop smoking; flames and cooking are unaffected.",
+  "moreswitches.switch.tutorial_off.name": "No Tutorial",
+  "moreswitches.switch.tutorial_off.desc": "No tutorial prompts of any kind are shown."
 }

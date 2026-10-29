@@ -1,22 +1,27 @@
 package com.heishandashu.moreswitches.client.feature;
 
 import com.heishandashu.moreswitches.MoreSwitchesMod;
-import com.heishandashu.moreswitches.config.SwitchIds;
 
 /**
- * The two light switches.
+ * A switch whose effect is read straight from the settings file by a mixin.
  *
- * <p>Both effects are read directly by their mixins from the settings file, so neither module owns
- * per-frame work. They exist because every switch must have a module: a switch without one is a
- * wiring error the settings screen would otherwise hide.</p>
+ * <p>Most of the mod's switches work this way: the mixin asks a rule class whether it may act, and
+ * the rule reads the saved value. Such a switch still needs a module, because a switch without one
+ * is a wiring error the settings screen would otherwise hide, but the module itself owns no state
+ * beyond remembering what it last logged.</p>
+ *
+ * <p>This class exists so those switches do not each get a near-identical file.</p>
  */
-public final class LightModule implements ClientFeature {
+public final class SimpleSwitchModule implements ClientFeature {
 
     private final String switchId;
 
     private boolean active;
 
-    public LightModule(String switchId) {
+    /**
+     * @param switchId the switch this module stands for, used only for logging
+     */
+    public SimpleSwitchModule(String switchId) {
         this.switchId = switchId;
     }
 

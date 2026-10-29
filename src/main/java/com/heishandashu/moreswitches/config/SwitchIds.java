@@ -34,6 +34,15 @@ public final class SwitchIds {
     /** Brighten the surroundings of a held light source, visually only. */
     public static final String MOVING_LIGHT = "moving_light";
 
+    /** Skip the version-mismatch warning when an incompatible resource pack is enabled. */
+    public static final String RESOURCE_PACK_WARNING_OFF = "resource_pack_warning_off";
+
+    /** Stop campfires from producing any smoke. */
+    public static final String CAMPFIRE_SMOKE_OFF = "campfire_smoke_off";
+
+    /** Never start the tutorial, so its toasts never appear. */
+    public static final String TUTORIAL_OFF = "tutorial_off";
+
     private static final List<SwitchDefinition> ALL = List.of(
             new SwitchDefinition(WINDOW_LOCK, false),
             new SwitchDefinition(FIREWORK_COOLDOWN, false),
@@ -42,7 +51,10 @@ public final class SwitchIds {
             new SwitchDefinition(FULLSCREEN_KEY_LOCK, false),
             new SwitchDefinition(EFFECT_PARTICLES_OFF, false),
             new SwitchDefinition(LIGHT_PREVIEW, false),
-            new SwitchDefinition(MOVING_LIGHT, false));
+            new SwitchDefinition(MOVING_LIGHT, false),
+            new SwitchDefinition(RESOURCE_PACK_WARNING_OFF, false),
+            new SwitchDefinition(CAMPFIRE_SMOKE_OFF, false),
+            new SwitchDefinition(TUTORIAL_OFF, false));
 
     private SwitchIds() {
     }

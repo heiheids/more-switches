@@ -21,7 +21,8 @@
                     client: com.heishandashu.moreswitches.client.MoreSwitchesClient
   Mixin             6 个：MixinBedRule（公共侧）、MixinMultiPlayerGameMode、
                     MixinMinecraftFullscreen、MixinClientLevelParticles、
-                    MixinLightCoordsUtil 与 MixinLevelRendererLightPreview（客户端侧）
+                    MixinLightCoordsUtil 与 MixinLevelRendererLightPreview、
+                    MixinPackCompatibility、MixinCampfireBlock、MixinTutorial（客户端侧）
   依赖              除 Fabric API 外无第三方库
 
 Loom 配置要点: 26.x 的插件 id 是 net.fabricmc.fabric-loom（没有 -remap），
@@ -45,6 +46,7 @@ Loom 配置要点: 26.x 的插件 id 是 net.fabricmc.fabric-loom（没有 -rema
   light/LightFalloff              模拟光的衰减算术（纯函数，可单测）
   light/LightPreviewRule          两个光照开关的规则（纯函数，可单测）
   light/HeldLight                 手持方块发光等级与到某方块的光照（公共侧，可单测）
+  quiet/QuietRules                三个"别再烦我"开关的判定（纯函数）
   sleep/RainSleepRule             下雨可否睡觉的判定（纯函数，可单测）
   cooldown/FireworkGate           烟花冷却的门控行为（由 CooldownClock 组合）
   mixin/MixinBedRule              让"仅夜间可睡"在雨天成立
@@ -68,6 +70,10 @@ Loom 配置要点: 26.x 的插件 id 是 net.fabricmc.fabric-loom（没有 -rema
   light/ClientHeldLight           功能七/八：光源位置（需要相机与准星，故在客户端源集）
   mixin/MixinLightCoordsUtil      功能八：把模拟光并入方块光照
   mixin/MixinLevelRendererLightPreview  功能七：世界空间绘制青色数字
+  mixin/MixinPackCompatibility    功能九：跳过资源包版本警告
+  mixin/MixinCampfireBlock        功能十：取消篝火烟雾
+  mixin/MixinTutorial             功能十一：阻止教程启动
+  feature/SimpleSwitchModule      只读设置、不做每帧工作的开关通用模块
   mixin/MixinMultiPlayerGameMode  功能二：唯一的注入点
   ui/SettingsScreen               设置界面
   ui/ToggleSwitchWidget           左右拨动开关控件
@@ -262,7 +268,28 @@ handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
 
 两个功能的共同点: 都只读取设置与位置，从不写入 Level、光照引擎或存档。
 
-十、界面滚动
+十、功能九到功能十一的实现
+----------------------------------------------------------------
+这三个都属于"阻止原版做某件烦人的事"，关键是找准唯一的触发点。
+
+功能九（关闭资源包警告）:
+  原版在启用资源包前问 PackCompatibility.isCompatible()，
+  返回 false 就会弹 ConfirmScreen 说"这个包是为其他版本做的"。
+  注入 isCompatible 的 HEAD 返回 true，于是走"直接启用"的分支，不再弹框。
+  只跳过提示，资源包照常加载；包真的缺失/损坏由另一条存在性检查处理，不受影响。
+
+功能十（关闭篝火烟雾）:
+  CampfireBlock.makeParticles 是普通篝火、灵魂篝火、干草捆信号篝火共同的
+  产烟入口。在 HEAD 取消，一次覆盖全部三种，不必事后按粒子类型过滤。
+  火焰（animateTick 里的 LAVA 粒子）不走这个方法，所以仍然保留。
+
+功能十一（关闭新手教程）:
+  Tutorial.start() 是教程选步骤的唯一入口，取消后 instance 保持为空。
+  这一点很关键: Tutorial 的 tick / onMouse / onInput / onGetItem / stop
+  每一个都在开头判空直接返回，所以取消 start 不会引发空指针。
+  从源头掐断，比逐个隐藏 TutorialToast 更彻底。
+
+十一、界面滚动
 ----------------------------------------------------------------
 功能从三个增加到五个后，320x180 下每行只剩 20px，只够一行文字，
 描述被挤没了。改法是让布局不再"把剩余空间均分给每一行":
@@ -283,6 +310,8 @@ handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
 
 单元测试: 30 个（冷却计时 6 + 烟花门控 4 + 雨天睡觉 4 + Q 键 2 + F11 2 +
 药水粒子 2 + 光照衰减 7 + 光照规则 3）。
+功能九到功能十一没有单独的测试: 它们的判定就是"设置里那个布尔值"，
+写一个恒等断言的测试没有价值，改由真机验证注入点。
 
 九、多语言实现
 ----------------------------------------------------------------

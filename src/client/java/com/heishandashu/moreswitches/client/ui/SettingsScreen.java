@@ -255,16 +255,21 @@ public class SettingsScreen extends Screen {
      * belonging to a row that is currently scrolled out of sight.</p>
      */
     private void positionToggles() {
+        int viewportBottom = this.viewportTop + this.viewportHeight;
         for (int index = 0; index < this.toggles.size(); index++) {
             ToggleSwitchWidget toggle = this.toggles.get(index);
             int rowY = rowScreenY(index);
             int toggleHeight = toggle.getHeight();
-            toggle.setY(rowY + (this.rowHeight - toggleHeight) / 2);
+            int toggleY = rowY + (this.rowHeight - toggleHeight) / 2;
+            toggle.setY(toggleY);
 
-            boolean onScreen = rowY + this.rowHeight > this.viewportTop
-                    && rowY < this.viewportTop + this.viewportHeight;
-            toggle.visible = onScreen;
-            toggle.active = onScreen;
+            // The switch must sit entirely inside the viewport. Text is clipped by a scissor, but a
+            // widget is drawn separately and would otherwise leak onto the hint line and the Done
+            // button when its row is only half scrolled into view.
+            boolean fullyInside = rowY >= this.viewportTop
+                    && rowY + this.rowHeight <= viewportBottom;
+            toggle.visible = fullyInside;
+            toggle.active = fullyInside;
         }
     }
 
@@ -417,10 +422,14 @@ public class SettingsScreen extends Screen {
 
         graphics.enableScissor(labelX, this.viewportTop, labelRight, this.viewportTop + this.viewportHeight);
         try {
+            int viewportBottom = this.viewportTop + this.viewportHeight;
             for (int index = 0; index < this.switchIds.size(); index++) {
                 int rowY = rowScreenY(index);
-                if (rowY + this.rowHeight <= this.viewportTop
-                        || rowY >= this.viewportTop + this.viewportHeight) {
+                // Draw a row only once at least half of it is inside the viewport. A sliver of a
+                // row reads as a rendering glitch rather than as "scroll for more", and the switch
+                // for that row is hidden anyway.
+                int visible = Math.min(rowY + this.rowHeight, viewportBottom) - Math.max(rowY, this.viewportTop);
+                if (visible < this.rowHeight / 2) {
                     continue;
                 }
                 drawRowText(graphics, this.switchIds.get(index), labelX, rowY + rowContentOffsetY());

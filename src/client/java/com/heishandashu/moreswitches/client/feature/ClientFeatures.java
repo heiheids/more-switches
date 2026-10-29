@@ -38,8 +38,12 @@ public final class ClientFeatures {
         DropKeyModule dropKey = new DropKeyModule();
         FullscreenKeyModule fullscreenKey = new FullscreenKeyModule();
         EffectParticleModule effectParticles = new EffectParticleModule();
-        LightModule lightPreview = new LightModule(SwitchIds.LIGHT_PREVIEW);
-        LightModule movingLight = new LightModule(SwitchIds.MOVING_LIGHT);
+        SimpleSwitchModule lightPreview = new SimpleSwitchModule(SwitchIds.LIGHT_PREVIEW);
+        SimpleSwitchModule movingLight = new SimpleSwitchModule(SwitchIds.MOVING_LIGHT);
+        SimpleSwitchModule packWarning =
+                new SimpleSwitchModule(SwitchIds.RESOURCE_PACK_WARNING_OFF);
+        SimpleSwitchModule campfireSmoke = new SimpleSwitchModule(SwitchIds.CAMPFIRE_SMOKE_OFF);
+        SimpleSwitchModule tutorial = new SimpleSwitchModule(SwitchIds.TUTORIAL_OFF);
 
         MODULES.put(SwitchIds.WINDOW_LOCK, windowLock);
         MODULES.put(SwitchIds.FIREWORK_COOLDOWN, fireworkCooldown);
@@ -49,6 +53,9 @@ public final class ClientFeatures {
         MODULES.put(SwitchIds.EFFECT_PARTICLES_OFF, effectParticles);
         MODULES.put(SwitchIds.LIGHT_PREVIEW, lightPreview);
         MODULES.put(SwitchIds.MOVING_LIGHT, movingLight);
+        MODULES.put(SwitchIds.RESOURCE_PACK_WARNING_OFF, packWarning);
+        MODULES.put(SwitchIds.CAMPFIRE_SMOKE_OFF, campfireSmoke);
+        MODULES.put(SwitchIds.TUTORIAL_OFF, tutorial);
 
         for (SwitchDefinition definition : SwitchIds.all()) {
             ClientFeature feature = MODULES.get(definition.id());

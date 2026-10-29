@@ -22,6 +22,9 @@ Java: 25
   第六行  关闭药水粒子效果
   第七行  预览光照范围
   第八行  移动光源
+  第九行  关闭资源包警告
+  第十行  关闭篝火烟雾
+  第十一行 关闭新手教程
 
 功能变多以后，列表可以滚动：把鼠标放在列表上滚轮，或者点右侧滚动条
 两端的箭头、点滚动条轨道。装得下时滚动条会自动隐藏。
@@ -178,7 +181,38 @@ J 在原版里没有绑定任何功能，不会拿走任何键。
 说明: 这两项都只对手持的方块生效。手持非光源物品（石头、剑等）时没有任何效果。
 
 
-十二、多语言
+十二、功能九: 关闭资源包警告
+----------------------------------------------------------------
+开启后: 启用"版本不匹配"的资源包时，不再弹出"这个资源包是为其他版本的
+Minecraft 制作的，可能无法正常工作"的确认框，直接启用。
+
+说明: 只是跳过这个确认框，资源包照常加载。如果资源包确实缺失或损坏，
+那是另一套检查，仍然会正常提示。
+
+适用场景: 一直在用某个跨版本资源包，每次切换/重载都要点一次确认很烦。
+
+
+十三、功能十: 关闭篝火烟雾
+----------------------------------------------------------------
+开启后: 篝火不再冒烟。
+
+说明: 只去掉烟雾。篝火照常燃烧、照常烤肉、照常发光，火焰仍然可见。
+带干草捆的信号篝火那种高高的烟柱也一并消失。
+
+适用场景: 烟雾遮住视线，或者在建筑/截图时不想要烟。
+
+
+十四、功能十一: 关闭新手教程
+----------------------------------------------------------------
+开启后: 不再弹出任何新手教程提示。
+
+说明: 从源头阻止教程启动，所以"按 W 走路""按空格跳跃""打树"
+"打开背包""合成木板"这一整套提示都不会出现，而不是逐个隐藏。
+
+适用场景: 已经熟悉游戏，不想每次新建世界都被提示一遍。
+
+
+十五、多语言
 ----------------------------------------------------------------
 界面标题右侧有一个语言按钮，点一下循环切换:
 
@@ -196,7 +230,7 @@ J 在原版里没有绑定任何功能，不会拿走任何键。
 （早期版本曾在同一行同时显示中英文，英文界面下会残留中文，已修正。）
 
 
-十三、配置文件
+十六、配置文件
 ----------------------------------------------------------------
 路径: <游戏目录>/config/moreswitches.json
 
@@ -219,19 +253,22 @@ J 在原版里没有绑定任何功能，不会拿走任何键。
   · effect_particles_off: 功能六（关闭药水粒子效果）
   · light_preview: 功能七（预览光照范围）
   · moving_light: 功能八（移动光源）
+  · resource_pack_warning_off: 功能九（关闭资源包警告）
+  · campfire_smoke_off: 功能十（关闭篝火烟雾）
+  · tutorial_off: 功能十一（关闭新手教程）
 
 可以直接用文本编辑器改，改完重启游戏生效。游戏里拨开关会立即
 覆盖这个文件，不需要手动改。
 
 
-十四、卸载
+十七、卸载
 ----------------------------------------------------------------
 从 mods 目录删除 more-switches-1.0.0.jar 即可。
 config/moreswitches.json 可以一并删除，也可以留着（不影响其他模组）。
 本模组不添加任何方块、物品、配方或世界数据，删除后存档完全不受影响。
 
 
-十五、常见问题
+十八、常见问题
 ----------------------------------------------------------------
 问: 按 J 没反应？
 答: 先确认界面里没有别的界面打开（聊天框、背包等）。J 只在没有任何
@@ -274,6 +311,9 @@ control on the right is a sliding switch: grey = off, green = on.
   Row 6  Hide Potion Particles
   Row 7  Preview Light Range
   Row 8  Moving Light
+  Row 9  Skip Pack Warning
+  Row 10 No Campfire Smoke
+  Row 11 No Tutorial
 
 The list scrolls once it no longer fits: use the wheel over the list, the arrows
 at the ends of the scrollbar, or click the track. The scrollbar hides itself when
@@ -446,7 +486,34 @@ Note: both switches only act on the block in your hand. Holding something that d
 not emit light (stone, a sword) does nothing.
 
 
-12. Language
+12. Switch 9 — Skip Pack Warning
+----------------------------------------------------------------
+On: enabling a resource pack built for another Minecraft version no longer asks
+"this pack may not work correctly" for confirmation; it is enabled straight away.
+
+Note: only the confirmation is skipped. The pack loads as usual, and a pack that is
+actually missing or broken is still reported by the separate checks that look for it.
+
+
+13. Switch 10 — No Campfire Smoke
+----------------------------------------------------------------
+On: campfires stop smoking.
+
+Note: only the smoke goes. The campfire still burns, still cooks, still gives off
+light and still shows flames. The tall plume from a signal campfire (the one with a
+hay bale under it) disappears too.
+
+
+14. Switch 11 — No Tutorial
+----------------------------------------------------------------
+On: no tutorial prompts of any kind appear.
+
+Note: the tutorial is stopped at its source, so the whole set — walk, jump, punch a
+tree, open the inventory, craft planks — never appears, rather than each toast being
+hidden individually.
+
+
+15. Language
 ----------------------------------------------------------------
 The button at the right of the title cycles:
 
@@ -465,7 +532,7 @@ printed in the other language. (An earlier build showed both languages on one ro
 which left Chinese text on an English screen; that is fixed.)
 
 
-13. Configuration file
+16. Configuration file
 ----------------------------------------------------------------
 <game dir>/config/moreswitches.json
 
@@ -487,12 +554,15 @@ which left Chinese text on an English screen; that is fixed.)
   · effect_particles_off: switch 6
   · light_preview: switch 7
   · moving_light: switch 8
+  · resource_pack_warning_off: switch 9
+  · campfire_smoke_off: switch 10
+  · tutorial_off: switch 11
 
 Edit it by hand if you like; changes apply on the next launch. Flipping a switch
 in game rewrites the file immediately.
 
 
-14. Uninstalling
+17. Uninstalling
 ----------------------------------------------------------------
 Delete more-switches-1.0.0.jar from the mods folder. config/moreswitches.json
 can be deleted too, or left in place (it does not affect other mods). The mod
@@ -500,7 +570,7 @@ adds no blocks, items, recipes or world data, so removing it cannot damage a
 save.
 
 
-15. FAQ
+18. FAQ
 ----------------------------------------------------------------
 Q: Pressing J does nothing.
 A: J only opens the screen when no other screen is open (chat, inventory, …),

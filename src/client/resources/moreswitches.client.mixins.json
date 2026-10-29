@@ -9,7 +9,10 @@
     "MixinMinecraftFullscreen",
     "MixinClientLevelParticles",
     "MixinLightCoordsUtil",
-    "MixinLevelRendererLightPreview"
+    "MixinLevelRendererLightPreview",
+    "MixinPackCompatibility",
+    "MixinCampfireBlock",
+    "MixinTutorial"
   ],
   "injectors": {
     "defaultRequire": 1
