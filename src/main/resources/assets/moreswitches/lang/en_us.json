@@ -34,5 +34,9 @@
   "moreswitches.switch.campfire_smoke_off.name": "No Campfire Smoke",
   "moreswitches.switch.campfire_smoke_off.desc": "Campfires stop smoking; flames and cooking are unaffected.",
   "moreswitches.switch.tutorial_off.name": "No Tutorial",
-  "moreswitches.switch.tutorial_off.desc": "No tutorial prompts of any kind are shown."
+  "moreswitches.switch.tutorial_off.desc": "No tutorial prompts of any kind are shown.",
+  "moreswitches.switch.carpet_fake_player.name": "Survival Fake Players",
+  "moreswitches.switch.carpet_fake_player.desc": "Sets Carpet so /player works in survival. Reload the world to apply.",
+  "moreswitches.switch.totem_refill.name": "Auto Refill Totem",
+  "moreswitches.switch.totem_refill.desc": "Keeps a totem of undying in your offhand until you run out."
 }

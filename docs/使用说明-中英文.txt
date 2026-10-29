@@ -25,6 +25,8 @@ Java: 25
   第九行  关闭资源包警告
   第十行  关闭篝火烟雾
   第十一行 关闭新手教程
+  第十二行 生存使用假玩家
+  第十三行 副手自动补充图腾
 
 功能变多以后，列表可以滚动：把鼠标放在列表上滚轮，或者点右侧滚动条
 两端的箭头、点滚动条轨道。装得下时滚动条会自动隐藏。
@@ -212,7 +214,32 @@ Minecraft 制作的，可能无法正常工作"的确认框，直接启用。
 适用场景: 已经熟悉游戏，不想每次新建世界都被提示一遍。
 
 
-十五、多语言
+十五、功能十二: 生存使用假玩家
+----------------------------------------------------------------
+开启后: 把 Carpet 的 commandPlayer 规则改成 true，让生存模式也能用 /player 生成假玩家。
+
+  · 普通 Carpet 默认该规则是 ops，只有管理员能用；生存存档没作弊时没人能触发
+  · 开启后写两处配置: 全局默认 config/carpet/default_carpet.conf，
+    以及当前存档自己的 carpet.conf（后者优先）
+  · 只改这一行，其他规则和注释原样保留
+
+重点: Carpet 只在载入世界时读配置，所以开启后需要重进一次世界（或重启游戏）才生效。
+
+关闭后会把该规则改回 ops。
+
+
+十六、功能十三: 副手自动补充图腾
+----------------------------------------------------------------
+开启后: 副手没有不死图腾时，自动从背包里拿一个补上，直到背包里也没有图腾为止。
+
+  · 用的是和手动按 F 交换完全一样的操作，服务器认可，不会出现物品不同步
+  · 每次补充间隔 10 tick，且打开任何界面时不会动作，避免和你自己的操作打架
+  · 图腾在快捷栏时一步到位；在主背包时会先借一个空的快捷栏格中转一下
+
+适用场景: 打袭击、打远古城市这类容易猝死的场合，省得一直盯着副手。
+
+
+十七、多语言
 ----------------------------------------------------------------
 界面标题右侧有一个语言按钮，点一下循环切换:
 
@@ -230,7 +257,7 @@ Minecraft 制作的，可能无法正常工作"的确认框，直接启用。
 （早期版本曾在同一行同时显示中英文，英文界面下会残留中文，已修正。）
 
 
-十六、配置文件
+十八、配置文件
 ----------------------------------------------------------------
 路径: <游戏目录>/config/moreswitches.json
 
@@ -256,19 +283,21 @@ Minecraft 制作的，可能无法正常工作"的确认框，直接启用。
   · resource_pack_warning_off: 功能九（关闭资源包警告）
   · campfire_smoke_off: 功能十（关闭篝火烟雾）
   · tutorial_off: 功能十一（关闭新手教程）
+  · carpet_fake_player: 功能十二（生存使用假玩家）
+  · totem_refill: 功能十三（副手自动补充图腾）
 
 可以直接用文本编辑器改，改完重启游戏生效。游戏里拨开关会立即
 覆盖这个文件，不需要手动改。
 
 
-十七、卸载
+十九、卸载
 ----------------------------------------------------------------
 从 mods 目录删除 more-switches-1.0.0.jar 即可。
 config/moreswitches.json 可以一并删除，也可以留着（不影响其他模组）。
 本模组不添加任何方块、物品、配方或世界数据，删除后存档完全不受影响。
 
 
-十八、常见问题
+二十、常见问题
 ----------------------------------------------------------------
 问: 按 J 没反应？
 答: 先确认界面里没有别的界面打开（聊天框、背包等）。J 只在没有任何
@@ -314,6 +343,8 @@ control on the right is a sliding switch: grey = off, green = on.
   Row 9  Skip Pack Warning
   Row 10 No Campfire Smoke
   Row 11 No Tutorial
+  Row 12 Survival Fake Players
+  Row 13 Auto Refill Totem
 
 The list scrolls once it no longer fits: use the wheel over the list, the arrows
 at the ends of the scrollbar, or click the track. The scrollbar hides itself when
@@ -513,7 +544,34 @@ tree, open the inventory, craft planks — never appears, rather than each toast
 hidden individually.
 
 
-15. Language
+15. Switch 12 — Survival Fake Players
+----------------------------------------------------------------
+On: sets Carpet's commandPlayer rule to true, so /player can spawn fake players in
+survival.
+
+  - Carpet defaults that rule to ops, so with cheats off nobody can use the command
+  - two files are written: the global config/carpet/default_carpet.conf, and the
+    current save's own carpet.conf, which takes priority
+  - only that one line is touched; other rules and comments are kept
+
+Note: Carpet reads these files when a world loads, so rejoin the world (or restart
+the game) after flipping the switch. Turning it off writes the rule back to ops.
+
+
+16. Switch 13 — Auto Refill Totem
+----------------------------------------------------------------
+On: when the offhand holds no totem of undying, one is taken from the inventory,
+until none is left.
+
+  - the move uses the same swap the F key performs, so the server accepts it and
+    nothing desynchronises
+  - attempts are spaced 10 ticks apart and never happen while a screen is open, so
+    it cannot fight your own clicks
+  - a totem in the hotbar takes one step; one in the main inventory is routed
+    through a free hotbar slot first
+
+
+17. Language
 ----------------------------------------------------------------
 The button at the right of the title cycles:
 
@@ -532,7 +590,7 @@ printed in the other language. (An earlier build showed both languages on one ro
 which left Chinese text on an English screen; that is fixed.)
 
 
-16. Configuration file
+18. Configuration file
 ----------------------------------------------------------------
 <game dir>/config/moreswitches.json
 
@@ -562,7 +620,7 @@ Edit it by hand if you like; changes apply on the next launch. Flipping a switch
 in game rewrites the file immediately.
 
 
-17. Uninstalling
+19. Uninstalling
 ----------------------------------------------------------------
 Delete more-switches-1.0.0.jar from the mods folder. config/moreswitches.json
 can be deleted too, or left in place (it does not affect other mods). The mod
@@ -570,7 +628,7 @@ adds no blocks, items, recipes or world data, so removing it cannot damage a
 save.
 
 
-18. FAQ
+20. FAQ
 ----------------------------------------------------------------
 Q: Pressing J does nothing.
 A: J only opens the screen when no other screen is open (chat, inventory, …),

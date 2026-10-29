@@ -39,11 +39,13 @@ public final class ClientFeatures {
         FullscreenKeyModule fullscreenKey = new FullscreenKeyModule();
         EffectParticleModule effectParticles = new EffectParticleModule();
         SimpleSwitchModule lightPreview = new SimpleSwitchModule(SwitchIds.LIGHT_PREVIEW);
-        SimpleSwitchModule movingLight = new SimpleSwitchModule(SwitchIds.MOVING_LIGHT);
+        MovingLightModule movingLight = new MovingLightModule();
         SimpleSwitchModule packWarning =
                 new SimpleSwitchModule(SwitchIds.RESOURCE_PACK_WARNING_OFF);
         SimpleSwitchModule campfireSmoke = new SimpleSwitchModule(SwitchIds.CAMPFIRE_SMOKE_OFF);
         SimpleSwitchModule tutorial = new SimpleSwitchModule(SwitchIds.TUTORIAL_OFF);
+        CarpetFakePlayerModule carpetFakePlayer = new CarpetFakePlayerModule();
+        TotemRefillModule totemRefill = new TotemRefillModule();
 
         MODULES.put(SwitchIds.WINDOW_LOCK, windowLock);
         MODULES.put(SwitchIds.FIREWORK_COOLDOWN, fireworkCooldown);
@@ -56,6 +58,8 @@ public final class ClientFeatures {
         MODULES.put(SwitchIds.RESOURCE_PACK_WARNING_OFF, packWarning);
         MODULES.put(SwitchIds.CAMPFIRE_SMOKE_OFF, campfireSmoke);
         MODULES.put(SwitchIds.TUTORIAL_OFF, tutorial);
+        MODULES.put(SwitchIds.CARPET_FAKE_PLAYER, carpetFakePlayer);
+        MODULES.put(SwitchIds.TOTEM_REFILL, totemRefill);
 
         for (SwitchDefinition definition : SwitchIds.all()) {
             ClientFeature feature = MODULES.get(definition.id());

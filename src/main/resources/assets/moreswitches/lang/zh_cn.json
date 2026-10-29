@@ -34,5 +34,9 @@
   "moreswitches.switch.campfire_smoke_off.name": "关闭篝火烟雾",
   "moreswitches.switch.campfire_smoke_off.desc": "篝火不再冒烟，火焰与功能不受影响。",
   "moreswitches.switch.tutorial_off.name": "关闭新手教程",
-  "moreswitches.switch.tutorial_off.desc": "不再弹出任何新手教程提示。"
+  "moreswitches.switch.tutorial_off.desc": "不再弹出任何新手教程提示。",
+  "moreswitches.switch.carpet_fake_player.name": "生存使用假玩家",
+  "moreswitches.switch.carpet_fake_player.desc": "改 Carpet 配置，让生存模式也能用 /player。需重进世界。",
+  "moreswitches.switch.totem_refill.name": "副手自动补充图腾",
+  "moreswitches.switch.totem_refill.desc": "副手没图腾时自动从背包补上，直到用完或关闭。"
 }

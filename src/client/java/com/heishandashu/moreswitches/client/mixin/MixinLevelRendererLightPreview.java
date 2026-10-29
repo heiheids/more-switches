@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -71,8 +70,26 @@ public class MixinLevelRendererLightPreview {
             return;
         }
 
+        // Vanilla's outline pass pushes, shifts by -camera and pops, so at RETURN the stack is back
+        // at the origin. World coordinates are only valid inside our own camera shift; drawing
+        // them directly would put the digits near the world origin instead of in front of the
+        // player, which is why an earlier version showed nothing at all.
+        poseStack.pushPose();
+        try {
+            poseStack.translate(-camera.pos.x, -camera.pos.y, -camera.pos.z);
+            drawAllNumbers(minecraft, poseStack, collector, camera, centre, emission);
+        } finally {
+            poseStack.popPose();
+        }
+    }
+
+    /** Walks the reachable cube and queues one number per block that would actually brighten. */
+    private static int drawAllNumbers(Minecraft minecraft, PoseStack poseStack,
+                                       SubmitNodeCollector collector, CameraRenderState camera,
+                                       Vec3 centre, int emission) {
         int reach = LightFalloff.reach(emission);
         BlockPos origin = BlockPos.containing(centre);
+        int submitted = 0;
         // Only walk the cube the light can reach: at torch level that is 27 blocks per axis, not
         // anything near the render distance.
         for (int dx = -reach; dx <= reach; dx++) {
@@ -93,9 +110,11 @@ public class MixinLevelRendererLightPreview {
                         continue;
                     }
                     submitNumber(poseStack, collector, camera, pos, simulated);
+                    submitted++;
                 }
             }
         }
+        return submitted;
     }
 
     /**
@@ -105,7 +124,10 @@ public class MixinLevelRendererLightPreview {
      * cost time for blocks nobody can see.</p>
      */
     private static boolean isTopFaceVisible(Minecraft minecraft, BlockPos pos) {
-        return minecraft.level.getBlockState(pos.above()).isAir();
+        // The block itself must be solid: checking only the space above it would also label the
+        // air blocks above open ground, which floats digits in mid-air.
+        return !minecraft.level.getBlockState(pos).isAir()
+                && minecraft.level.getBlockState(pos.above()).isAir();
     }
 
     /** Queues one cyan number, centred over the block's top face and turned to face the camera. */
@@ -115,9 +137,11 @@ public class MixinLevelRendererLightPreview {
         try {
             poseStack.translate(pos.getX() + 0.5D, pos.getY() + TOP_OFFSET, pos.getZ() + 0.5D);
             // Face the camera the same way name tags do, then centre the glyph on this spot.
-            poseStack.rotate(new Quaternionf().rotateY((float) Math.toRadians(-camera.yRot))
-                    .rotateX((float) Math.toRadians(camera.xRot)));
-            poseStack.scale(0.025F, -0.025F, 0.025F);
+            // The camera's own orientation, and the same mirrored scale vanilla uses for a name
+            // tag. Building a quaternion by hand from yRot/xRot put the glyphs back-facing, so
+            // the text was culled and nothing appeared on screen.
+            poseStack.rotate(camera.orientation);
+            poseStack.scale(-0.025F, -0.025F, 0.025F);
 
             String text = Integer.toString(level);
             float width = Minecraft.getInstance().font.width(text) / 2.0F;

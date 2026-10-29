@@ -43,6 +43,12 @@ public final class SwitchIds {
     /** Never start the tutorial, so its toasts never appear. */
     public static final String TUTORIAL_OFF = "tutorial_off";
 
+    /** Set Carpet's {@code commandPlayer} rule so fake players can be used in survival. */
+    public static final String CARPET_FAKE_PLAYER = "carpet_fake_player";
+
+    /** Keep a totem of undying in the offhand whenever one is available. */
+    public static final String TOTEM_REFILL = "totem_refill";
+
     private static final List<SwitchDefinition> ALL = List.of(
             new SwitchDefinition(WINDOW_LOCK, false),
             new SwitchDefinition(FIREWORK_COOLDOWN, false),
@@ -54,7 +60,9 @@ public final class SwitchIds {
             new SwitchDefinition(MOVING_LIGHT, false),
             new SwitchDefinition(RESOURCE_PACK_WARNING_OFF, false),
             new SwitchDefinition(CAMPFIRE_SMOKE_OFF, false),
-            new SwitchDefinition(TUTORIAL_OFF, false));
+            new SwitchDefinition(TUTORIAL_OFF, false),
+            new SwitchDefinition(CARPET_FAKE_PLAYER, false),
+            new SwitchDefinition(TOTEM_REFILL, false));
 
     private SwitchIds() {
     }
