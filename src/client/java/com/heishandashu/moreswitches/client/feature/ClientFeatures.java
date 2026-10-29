@@ -46,6 +46,9 @@ public final class ClientFeatures {
         SimpleSwitchModule tutorial = new SimpleSwitchModule(SwitchIds.TUTORIAL_OFF);
         CarpetFakePlayerModule carpetFakePlayer = new CarpetFakePlayerModule();
         TotemRefillModule totemRefill = new TotemRefillModule();
+        SimpleSwitchModule tntSound = new SimpleSwitchModule(SwitchIds.TNT_SOUND_OFF);
+        SimpleSwitchModule minecartSound = new SimpleSwitchModule(SwitchIds.MINECART_SOUND_OFF);
+        SimpleSwitchModule pistonSound = new SimpleSwitchModule(SwitchIds.PISTON_SOUND_OFF);
 
         MODULES.put(SwitchIds.WINDOW_LOCK, windowLock);
         MODULES.put(SwitchIds.FIREWORK_COOLDOWN, fireworkCooldown);
@@ -60,6 +63,9 @@ public final class ClientFeatures {
         MODULES.put(SwitchIds.TUTORIAL_OFF, tutorial);
         MODULES.put(SwitchIds.CARPET_FAKE_PLAYER, carpetFakePlayer);
         MODULES.put(SwitchIds.TOTEM_REFILL, totemRefill);
+        MODULES.put(SwitchIds.TNT_SOUND_OFF, tntSound);
+        MODULES.put(SwitchIds.MINECART_SOUND_OFF, minecartSound);
+        MODULES.put(SwitchIds.PISTON_SOUND_OFF, pistonSound);
 
         for (SwitchDefinition definition : SwitchIds.all()) {
             ClientFeature feature = MODULES.get(definition.id());

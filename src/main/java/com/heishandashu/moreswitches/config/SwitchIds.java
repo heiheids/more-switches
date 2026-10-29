@@ -49,6 +49,15 @@ public final class SwitchIds {
     /** Keep a totem of undying in the offhand whenever one is available. */
     public static final String TOTEM_REFILL = "totem_refill";
 
+    /** Drop the explosion boom. */
+    public static final String TNT_SOUND_OFF = "tnt_sound_off";
+
+    /** Drop minecart rolling and riding sounds. */
+    public static final String MINECART_SOUND_OFF = "minecart_sound_off";
+
+    /** Drop piston extend and contract sounds. */
+    public static final String PISTON_SOUND_OFF = "piston_sound_off";
+
     private static final List<SwitchDefinition> ALL = List.of(
             new SwitchDefinition(WINDOW_LOCK, false),
             new SwitchDefinition(FIREWORK_COOLDOWN, false),
@@ -62,7 +71,10 @@ public final class SwitchIds {
             new SwitchDefinition(CAMPFIRE_SMOKE_OFF, false),
             new SwitchDefinition(TUTORIAL_OFF, false),
             new SwitchDefinition(CARPET_FAKE_PLAYER, false),
-            new SwitchDefinition(TOTEM_REFILL, false));
+            new SwitchDefinition(TOTEM_REFILL, false),
+            new SwitchDefinition(TNT_SOUND_OFF, false),
+            new SwitchDefinition(MINECART_SOUND_OFF, false),
+            new SwitchDefinition(PISTON_SOUND_OFF, false));
 
     private SwitchIds() {
     }

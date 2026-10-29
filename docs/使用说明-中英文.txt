@@ -27,6 +27,9 @@ Java: 25
   第十一行 关闭新手教程
   第十二行 生存使用假玩家
   第十三行 副手自动补充图腾
+  第十四行 关闭爆炸声
+  第十五行 关闭矿车声音
+  第十六行 关闭活塞声音
 
 功能变多以后，列表可以滚动：把鼠标放在列表上滚轮，或者点右侧滚动条
 两端的箭头、点滚动条轨道。装得下时滚动条会自动隐藏。
@@ -243,7 +246,33 @@ Minecraft 制作的，可能无法正常工作"的确认框，直接启用；
 适用场景: 打袭击、打远古城市这类容易猝死的场合，省得一直盯着副手。
 
 
-十七、多语言
+十七、功能十四: 关闭爆炸声
+----------------------------------------------------------------
+开启后: 爆炸的轰鸣声不再播放。
+
+说明: 游戏里所有爆炸共用同一个音效，所以这项会一并去掉苦力怕、床、重生锚
+等爆炸的声音，不只是 TNT。这是原版音效设计决定的，没有按来源区分的开关。
+
+适用场景: 刷铁机/刷怪塔附近频繁爆炸，或单纯嫌吵。
+
+
+十八、功能十五: 关闭矿车声音
+----------------------------------------------------------------
+开启后: 矿车滚动的噪音、以及坐在矿车里听到的闷响都不再播放。
+
+说明: 只关声音，矿车照常行驶、照常运输。
+
+
+十九、功能十六: 关闭活塞声音
+----------------------------------------------------------------
+开启后: 活塞推出与收回的声音不再播放。
+
+说明: 只关声音，活塞照常工作，方块照常被推动。
+
+适用场景: 大型红石机器活塞声此起彼伏时。
+
+
+二十、多语言
 ----------------------------------------------------------------
 界面标题右侧有一个语言按钮，点一下循环切换:
 
@@ -261,7 +290,7 @@ Minecraft 制作的，可能无法正常工作"的确认框，直接启用；
 （早期版本曾在同一行同时显示中英文，英文界面下会残留中文，已修正。）
 
 
-十八、配置文件
+二十一、配置文件
 ----------------------------------------------------------------
 路径: <游戏目录>/config/moreswitches.json
 
@@ -289,19 +318,22 @@ Minecraft 制作的，可能无法正常工作"的确认框，直接启用；
   · tutorial_off: 功能十一（关闭新手教程）
   · carpet_fake_player: 功能十二（生存使用假玩家）
   · totem_refill: 功能十三（副手自动补充图腾）
+  · tnt_sound_off: 功能十四（关闭爆炸声）
+  · minecart_sound_off: 功能十五（关闭矿车声音）
+  · piston_sound_off: 功能十六（关闭活塞声音）
 
 可以直接用文本编辑器改，改完重启游戏生效。游戏里拨开关会立即
 覆盖这个文件，不需要手动改。
 
 
-十九、卸载
+二十二、卸载
 ----------------------------------------------------------------
 从 mods 目录删除 more-switches-1.0.0.jar 即可。
 config/moreswitches.json 可以一并删除，也可以留着（不影响其他模组）。
 本模组不添加任何方块、物品、配方或世界数据，删除后存档完全不受影响。
 
 
-二十、常见问题
+二十三、常见问题
 ----------------------------------------------------------------
 问: 按 J 没反应？
 答: 先确认界面里没有别的界面打开（聊天框、背包等）。J 只在没有任何
@@ -349,6 +381,9 @@ control on the right is a sliding switch: grey = off, green = on.
   Row 11 No Tutorial
   Row 12 Survival Fake Players
   Row 13 Auto Refill Totem
+  Row 14 No Explosion Sound
+  Row 15 No Minecart Sound
+  Row 16 No Piston Sound
 
 The list scrolls once it no longer fits: use the wheel over the list, the arrows
 at the ends of the scrollbar, or click the track. The scrollbar hides itself when
@@ -579,7 +614,30 @@ until none is left.
     through a free hotbar slot first
 
 
-17. Language
+17. Switch 14 — No Explosion Sound
+----------------------------------------------------------------
+On: the explosion boom is not played.
+
+Note: the game has a single sound event for explosions, so this also removes the
+sound of creeper, bed and respawn-anchor explosions, not just TNT. That is how the
+vanilla sound is set up; there is no per-source variant to key on.
+
+
+18. Switch 15 — No Minecart Sound
+----------------------------------------------------------------
+On: neither the rolling noise nor the muffled sound heard while riding is played.
+
+Note: sound only — minecarts still move and still carry things.
+
+
+19. Switch 16 — No Piston Sound
+----------------------------------------------------------------
+On: the piston extend and contract sounds are not played.
+
+Note: sound only — pistons still work and still push blocks.
+
+
+20. Language
 ----------------------------------------------------------------
 The button at the right of the title cycles:
 
@@ -598,7 +656,7 @@ printed in the other language. (An earlier build showed both languages on one ro
 which left Chinese text on an English screen; that is fixed.)
 
 
-18. Configuration file
+21. Configuration file
 ----------------------------------------------------------------
 <game dir>/config/moreswitches.json
 
@@ -628,7 +686,7 @@ Edit it by hand if you like; changes apply on the next launch. Flipping a switch
 in game rewrites the file immediately.
 
 
-19. Uninstalling
+22. Uninstalling
 ----------------------------------------------------------------
 Delete more-switches-1.0.0.jar from the mods folder. config/moreswitches.json
 can be deleted too, or left in place (it does not affect other mods). The mod
@@ -636,7 +694,7 @@ adds no blocks, items, recipes or world data, so removing it cannot damage a
 save.
 
 
-20. FAQ
+23. FAQ
 ----------------------------------------------------------------
 Q: Pressing J does nothing.
 A: J only opens the screen when no other screen is open (chat, inventory, …),

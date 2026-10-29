@@ -38,5 +38,11 @@
   "moreswitches.switch.carpet_fake_player.name": "生存使用假玩家",
   "moreswitches.switch.carpet_fake_player.desc": "改 Carpet 配置，让生存模式也能用 /player。需重进世界。",
   "moreswitches.switch.totem_refill.name": "副手自动补充图腾",
-  "moreswitches.switch.totem_refill.desc": "副手没图腾时自动从背包补上，直到用完或关闭。"
+  "moreswitches.switch.totem_refill.desc": "副手没图腾时自动从背包补上，直到用完或关闭。",
+  "moreswitches.switch.tnt_sound_off.name": "关闭爆炸声",
+  "moreswitches.switch.tnt_sound_off.desc": "去掉爆炸的轰鸣，TNT 与其他爆炸同用这个音效。",
+  "moreswitches.switch.minecart_sound_off.name": "关闭矿车声音",
+  "moreswitches.switch.minecart_sound_off.desc": "去掉矿车滚动的噪音与乘坐时的闷响。",
+  "moreswitches.switch.piston_sound_off.name": "关闭活塞声音",
+  "moreswitches.switch.piston_sound_off.desc": "去掉活塞推出与收回的声音。"
 }

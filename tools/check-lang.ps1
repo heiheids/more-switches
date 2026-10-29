@@ -17,7 +17,7 @@ $langDir = Join-Path $ProjectRoot 'src\main\resources\assets\moreswitches\lang'
 $zh = Get-Content (Join-Path $langDir 'zh_cn.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $en = Get-Content (Join-Path $langDir 'en_us.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 
-$switches = @('window_lock', 'firework_cooldown', 'rain_sleep', 'drop_key_lock', 'fullscreen_key_lock', 'effect_particles_off', 'light_preview', 'moving_light', 'resource_pack_warning_off', 'campfire_smoke_off', 'tutorial_off', 'carpet_fake_player', 'totem_refill')
+$switches = @('window_lock', 'firework_cooldown', 'rain_sleep', 'drop_key_lock', 'fullscreen_key_lock', 'effect_particles_off', 'light_preview', 'moving_light', 'resource_pack_warning_off', 'campfire_smoke_off', 'tutorial_off', 'carpet_fake_player', 'totem_refill', 'tnt_sound_off', 'minecart_sound_off', 'piston_sound_off')
 
 # ModLang rule: "auto" follows the game language, otherwise the pinned choice wins.
 $gameLanguage = 'zh_cn'

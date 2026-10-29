@@ -13,7 +13,8 @@
     "MixinCampfireBlock",
     "MixinTutorial",
     "MixinPackSelectionEntry",
-    "MixinRecipeToast"
+    "MixinRecipeToast",
+    "MixinSoundEngine"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -38,5 +38,11 @@
   "moreswitches.switch.carpet_fake_player.name": "Survival Fake Players",
   "moreswitches.switch.carpet_fake_player.desc": "Sets Carpet so /player works in survival. Reload the world to apply.",
   "moreswitches.switch.totem_refill.name": "Auto Refill Totem",
-  "moreswitches.switch.totem_refill.desc": "Keeps a totem of undying in your offhand until you run out."
+  "moreswitches.switch.totem_refill.desc": "Keeps a totem of undying in your offhand until you run out.",
+  "moreswitches.switch.tnt_sound_off.name": "No Explosion Sound",
+  "moreswitches.switch.tnt_sound_off.desc": "Removes the explosion boom; TNT and other explosions share this sound.",
+  "moreswitches.switch.minecart_sound_off.name": "No Minecart Sound",
+  "moreswitches.switch.piston_sound_off.name": "No Piston Sound",
+  "moreswitches.switch.piston_sound_off.desc": "Removes the piston extend and contract sounds.",
+  "moreswitches.switch.minecart_sound_off.desc": "Removes the rolling noise and the muffled sound while riding."
 }

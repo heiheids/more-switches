@@ -1,7 +1,7 @@
 package com.heishandashu.moreswitches.client.mixin;
 
-import com.heishandashu.moreswitches.client.light.ClientHeldLight;
 import com.heishandashu.moreswitches.client.feature.MovingLightModule;
+import com.heishandashu.moreswitches.client.light.ClientHeldLight;
 import com.heishandashu.moreswitches.light.LightPreviewRule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -17,10 +17,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * Makes a held light source appear to light the blocks around it.
  *
- * <p>The target is the brightness lookup that every block face goes through while the level is
- * rendered. The injection rewrites the packed light of that one position: the sky light is
- * preserved and only the block light is raised, so the result looks like a torch was placed there
- * rather than like the whole screen got brighter.</p>
+ * <p>The target is the brightness lookup the section mesher goes through for every block face. The
+ * injection rewrites the packed light of that one position: the sky light is preserved and only the
+ * block light is raised, so the result looks like a torch was placed there rather than like the
+ * whole screen got brighter.</p>
  *
  * <p>Two properties matter for correctness:</p>
  * <ul>
@@ -33,12 +33,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  *
  * <p>Taking the maximum instead of adding keeps an already-bright spot from becoming brighter than
  * the simulated source itself, which is how vanilla treats overlapping light sources.</p>
+ *
+ * <p>Because these values are baked into the section meshes, this injection alone is not enough to
+ * make the light appear; {@code MovingLightModule} re-meshes the nearby sections when the light
+ * moves.</p>
  */
 @Mixin(LightCoordsUtil.class)
 public class MixinLightCoordsUtil {
 
-    // The full descriptor is required: the class also has a two-argument getLightCoords, and a
-    // bare name would let Mixin pick that overload and fail at apply time.
+    // The full descriptor is required: the class also has a two-argument getLightCoords, and a bare
+    // name would let Mixin pick that overload and fail at apply time.
     @Inject(method = "getLightCoords(Lnet/minecraft/util/LightCoordsUtil$BrightnessGetter;"
             + "Lnet/minecraft/world/level/BlockAndLightGetter;"
             + "Lnet/minecraft/world/level/block/state/BlockState;"
@@ -54,10 +58,12 @@ public class MixinLightCoordsUtil {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || level != minecraft.level) {
-            // Only the level currently being rendered is simulated; anything else is another pass.
+        if (minecraft.level == null) {
             return;
         }
+        // Note: `level` must not be compared with `minecraft.level`. While a section is being
+        // meshed the caller passes a RenderSectionRegion snapshot, not the level itself, so an
+        // identity check rejects every real call and the light never gets baked.
         int emission = ClientHeldLight.emission(minecraft);
         if (emission <= 0) {
             return;
@@ -72,7 +78,7 @@ public class MixinLightCoordsUtil {
         int existing = LightCoordsUtil.block(packed);
         if (simulated > existing) {
             cir.setReturnValue(LightCoordsUtil.withBlock(packed, simulated));
-            com.heishandashu.moreswitches.client.feature.MovingLightModule.noteBakedMesh();
+            MovingLightModule.noteBakedMesh();
         }
     }
 }

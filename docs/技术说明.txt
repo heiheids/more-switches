@@ -263,6 +263,11 @@ handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
   取 max 同时保证"本来就亮的地方"不会被模拟光照得比模拟光源本身还亮。
 
   但只改建网格时的采样值不会显示——这些值被烘焙进区块顶点，区块早建好了。
+  另一个致命细节: 注入里不能拿传进来的 level 和 minecraft.level 做同一性比较。
+  建区块网格时调用方传的是 RenderSectionRegion（区块快照），不是 ClientLevel，
+  一比较就永远不相等，于是每次都提前返回，光永远烘焙不进去。
+  这正是这一版之前"重建在触发但画面没变化"的原因。
+
   必须让网格重建: 光源跨方块时，对光源所在区块及其邻居（3×3×3）调用
   Minecraft.levelExtractor.setSectionDirty(x, y, z)。
   注意入口是 levelExtractor，不是 ClientLevel.setSectionDirtyWithNeighbors：
@@ -320,7 +325,22 @@ handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
   RecipeToast.addOrUpdate 弹出的。所以另注入 RecipeToast.addOrUpdate 的 HEAD，
   让关闭教程的开关同时取消它，配方本身仍然注册、仍在配方书里。
 
-十一、界面滚动
+十一、功能十四到功能十六（静音）的实现
+----------------------------------------------------------------
+三个静音开关共用一个注入点: SoundEngine.play(SoundInstance) 的 HEAD，
+命中时返回 SoundEngine.PlayResult.NOT_STARTED，等于告诉引擎这次没播放。
+
+为什么选这里: 声音到引擎有三条路径——服务器发的定位音效包、绑定到实体的音效、
+以及像矿车滚动那种长期存在的 SoundInstance。三者最终都汇成 SoundInstance，
+在同一处判断即可全覆盖，不必分别拦截 playLocalSound 的两个重载。
+
+匹配用声音标识符（如 minecraft:block.piston.extend）而不是 SoundEvent 对象，
+因为 SoundInstance 只暴露标识符；标识符是稳定的资源名，集中写在 SoundRules 里可单测。
+
+爆炸声说明: 原版只有一个 entity.generic.explode 事件，TNT、苦力怕、床、
+重生锚共用，因此"关闭爆炸声"必然是关闭所有爆炸声，无法只针对 TNT。
+
+十二、界面滚动
 ----------------------------------------------------------------
 功能从三个增加到五个后，320x180 下每行只剩 20px，只够一行文字，
 描述被挤没了。改法是让布局不再"把剩余空间均分给每一行":

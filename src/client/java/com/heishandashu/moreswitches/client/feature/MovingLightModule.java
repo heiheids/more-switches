@@ -27,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class MovingLightModule implements ClientFeature {
 
-    /** Opt-in diagnostics: counts how far the effect got, printed every few seconds. */
+    /** Opt-in diagnostics: how far the effect got, printed every few seconds. */
     private static final String DEBUG_PROPERTY = "moreswitches.debugLight";
 
     private static final long REPORT_INTERVAL_MILLIS = 3_000L;
