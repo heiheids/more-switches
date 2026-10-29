@@ -1,6 +1,7 @@
 package com.heishandashu.moreswitches.client.mixin;
 
 import com.heishandashu.moreswitches.client.light.ClientHeldLight;
+import com.heishandashu.moreswitches.client.feature.MovingLightModule;
 import com.heishandashu.moreswitches.light.LightPreviewRule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -71,6 +72,7 @@ public class MixinLightCoordsUtil {
         int existing = LightCoordsUtil.block(packed);
         if (simulated > existing) {
             cir.setReturnValue(LightCoordsUtil.withBlock(packed, simulated));
+            com.heishandashu.moreswitches.client.feature.MovingLightModule.noteBakedMesh();
         }
     }
 }

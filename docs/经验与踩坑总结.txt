@@ -374,6 +374,31 @@
     这一步能区分"注入没匹配上"和"功能没触发"。
 
 
+56. 世界空间提交文字在 26.3 上不可靠，早点换屏幕空间
+    为画光照等级数字，先后两次用 submitBlockOutline 注入 + submitText:
+    第一次坐标系错（没补 -camera.pos），第二次补了相机位移并改用
+    camera.orientation 做公告板，仍然一条都看不见。
+    日志显示每帧提交量上万，说明"提交成功"和"能看见"是两件事。
+    正解: 改用 HUD（HudElementRegistry + GuiGraphicsExtractor.text），
+    自己用眼睛位置、视线、视场角做投影。
+    判断标准: 与其在不确定的渲染路径上反复试，不如换成已被验证可用的绘制入口。
+
+57. 重建网格的入口在 extract 管线里
+    光改"建网格时读到的值"没用，因为网格是烘焙好的。
+    第一版用 ClientLevel.setSectionDirtyWithNeighbors 触发重建，完全没有效果。
+    读 LambDynamicLights 源码后发现它调的是
+    Minecraft.levelExtractor.setSectionDirty(x, y, z)。
+    换成这个之后，日志立刻显示 dirtySections 在增长。
+    教训: 26.3 的渲染管线搬到 extract 之后，
+    "Level 上的方法"未必还能驱动区块重建，要看现成可用的模组调的是哪个入口。
+
+58. 参考成熟模组比自己猜 API 快得多
+    动态光照折腾了三轮都无效，读 LambDynamicLights 的两个 mixin
+    （BrightnessGetterMixin + ChunkRebuildScheduler）后很快就定位到两个关键点:
+    注入哪个方法、用哪个入口重建。
+    教训: 需求涉及平台级渲染能力时，先找一个做到过同样事情的模组拆开看。
+
+
 九、流程
 ----------------------------------------------------------------
 

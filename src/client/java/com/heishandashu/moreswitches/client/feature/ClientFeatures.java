@@ -38,7 +38,7 @@ public final class ClientFeatures {
         DropKeyModule dropKey = new DropKeyModule();
         FullscreenKeyModule fullscreenKey = new FullscreenKeyModule();
         EffectParticleModule effectParticles = new EffectParticleModule();
-        SimpleSwitchModule lightPreview = new SimpleSwitchModule(SwitchIds.LIGHT_PREVIEW);
+        LightPreviewOverlay lightPreview = new LightPreviewOverlay();
         MovingLightModule movingLight = new MovingLightModule();
         SimpleSwitchModule packWarning =
                 new SimpleSwitchModule(SwitchIds.RESOURCE_PACK_WARNING_OFF);

@@ -247,7 +247,11 @@ handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
 不可能形成"玩家身边一圈光"。所以移动光源必须在"每个方块位置"这一层做。
 
 功能八（移动光源）:
-  注入 LightCoordsUtil.getLightCoords 的 RETURN，用模拟值替换该位置的方块光:
+  参考 LambDynamicLights 的做法（其 BrightnessGetterMixin 用 @ModifyReturnValue
+  改 LightCoordsUtil$BrightnessGetter 的 DEFAULT 实现，再由
+  ChunkRebuildScheduler 调 Minecraft.levelExtractor.setSectionDirty 触发重建）。
+
+  本模组注入 LightCoordsUtil.getLightCoords 的 RETURN，用模拟值替换该位置的方块光:
       int packed  = 原返回值
       int existing = LightCoordsUtil.block(packed)
       int simulated = 模拟光等级(该位置)
@@ -258,15 +262,29 @@ handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
   为什么取 max 而不是相加: 原版里光不叠加，两支火把并排不会比一支更亮。
   取 max 同时保证"本来就亮的地方"不会被模拟光照得比模拟光源本身还亮。
 
-功能七（预览光照范围）:
-  用 LevelRenderer.submitBlockOutline 的 RETURN（此时 collector 与相机状态都在手上），
-  遍历模拟光源能到达的立方体，对每个"上方是空气、且模拟光确实比现有方块光更亮"的方块，
-  用 submitText 提交一个青色数字。
-  只标"会变亮"的方块，因为标一个本来就更亮的地方会误导玩家。
+  但只改建网格时的采样值不会显示——这些值被烘焙进区块顶点，区块早建好了。
+  必须让网格重建: 光源跨方块时，对光源所在区块及其邻居（3×3×3）调用
+  Minecraft.levelExtractor.setSectionDirty(x, y, z)。
+  注意入口是 levelExtractor，不是 ClientLevel.setSectionDirtyWithNeighbors：
+  26.3 的区块网格调度在新的 extract 管线里，走 Level 那条路到不了。
+  火把射程 13 < 16，所以 3×3×3 已覆盖全部受影响区块。
 
-  数字在世界空间里朝向相机: PoseStack 平移到位 → 按相机偏航/俯仰旋转 → 缩放 0.025，
-  与名牌（name tag）同样的做法。用 submitText 而不是 submitNameTag，
-  因为名签自带白色背板，而需求要的是纯青色数字。
+功能七（预览光照范围）:
+  改为屏幕空间 HUD 绘制，不再走世界空间提交。
+
+  世界空间试过两次都不可见: 每帧确实提交了上万条 submitText，
+  但屏幕上一条都没有。先补了相机位移，再用 camera.orientation 做公告板，
+  仍然看不到，因此判定这条路径在 26.3 不可靠，改用 HUD。
+
+  现在的做法:
+    1. 遍历模拟光源能到达的立方体，筛出"实心、上方是空气、
+       且模拟光确实比现有方块光更亮"的方块
+    2. 用 ScreenProjection 把每个方块顶面中心投影到屏幕坐标
+       （眼睛位置 + 视线方向 + 垂直视场角 + 视口尺寸，纯算术，可单测）
+    3. 按距离取最近的至多 320 个，用 GuiGraphicsExtractor.text 画青色数字
+
+  代价是不再做深度遮挡判断，数字会画在方块之上——
+  对"光照范围预览"来说这正好是想要的读数效果。
 
 两个功能的共同点: 都只读取设置与位置，从不写入 Level、光照引擎或存档。
 

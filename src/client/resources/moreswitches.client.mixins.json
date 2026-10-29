@@ -9,7 +9,6 @@
     "MixinMinecraftFullscreen",
     "MixinClientLevelParticles",
     "MixinLightCoordsUtil",
-    "MixinLevelRendererLightPreview",
     "MixinPackCompatibility",
     "MixinCampfireBlock",
     "MixinTutorial",
