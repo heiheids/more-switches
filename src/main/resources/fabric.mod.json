@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "moreswitches",
+  "version": "${version}",
+  "name": "更多开关功能",
+  "description": "更多开关功能 (More Switches) — 一页开关式的实用工具集：锁定窗口大小 / 烟花火箭强制冷却 / 下雨就可以睡觉。默认按 J 打开设置界面。",
+  "authors": [
+    "黑山大叔"
+  ],
+  "contact": {
+    "homepage": "https://space.bilibili.com/19428259"
+  },
+  "license": "MIT",
+  "icon": "assets/moreswitches/textures/icon.png",
+  "environment": "*",
+  "mixins": [
+    "moreswitches.mixins.json",
+    "moreswitches.client.mixins.json"
+  ],
+  "entrypoints": {
+    "main": [
+      "com.heishandashu.moreswitches.MoreSwitchesMod"
+    ],
+    "client": [
+      "com.heishandashu.moreswitches.client.MoreSwitchesClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

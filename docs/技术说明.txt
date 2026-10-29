@@ -1,0 +1,297 @@
+更多开关功能 — 技术说明
+================================================================
+作者: 黑山大叔
+主页: https://space.bilibili.com/19428259
+核心结构来自: https://crates.io/crates/lighty-launcher
+
+目标: Minecraft 26.3 / Fabric / Java 25
+
+
+一、工程坐标
+----------------------------------------------------------------
+  mod id            moreswitches
+  版本              1.0.0 (gradle.properties)
+  Minecraft         26.3（未混淆，无需 mappings）
+  Fabric Loader     0.19.5
+  Fabric API        0.162.0+26.3
+  Loom              net.fabricmc.fabric-loom 1.18.4
+  Gradle            9.7.1
+  Java              25（编译 release 25，toolchain 25）
+  入口              main  : com.heishandashu.moreswitches.MoreSwitchesMod
+                    client: com.heishandashu.moreswitches.client.MoreSwitchesClient
+  Mixin             4 个：MixinBedRule（公共侧）、MixinMultiPlayerGameMode、
+                    MixinMinecraftFullscreen 与 MixinClientLevelParticles（客户端侧）
+  依赖              除 Fabric API 外无第三方库
+
+Loom 配置要点: 26.x 的插件 id 是 net.fabricmc.fabric-loom（没有 -remap），
+不写 mappings 行，依赖用 implementation 而不是 modImplementation，
+产物任务是 jar 而不是 remapJar。写错这些不一定报错，但产出的 jar 是错的。
+
+
+二、代码结构
+----------------------------------------------------------------
+公共侧（src/main，服务端也会有）:
+
+  MoreSwitchesMod                 入口、日志、Identifier 构造
+  config/SwitchDefinition         一个开关的定义（id + 默认值）
+  config/SwitchIds                开关清单与显示顺序（唯一真相源）
+  config/ModSettings              配置读写（config/moreswitches.json）
+  i18n/ModLang                    模组自有语言表（中/英）
+  cooldown/CooldownClock          冷却窗口纯逻辑（无 Minecraft 类型，可单测）
+  drop/DropKeyRule                Q 键丢弃的判定（纯函数，可单测）
+  fullscreen/FullscreenKeyRule    F11 全屏的判定（纯函数，可单测）
+  effect/EffectParticleRule       药水粒子的判定（纯函数，可单测）
+  sleep/RainSleepRule             下雨可否睡觉的判定（纯函数，可单测）
+  cooldown/FireworkGate           烟花冷却的门控行为（由 CooldownClock 组合）
+  mixin/MixinBedRule              让"仅夜间可睡"在雨天成立
+
+客户端侧（src/client）:
+
+  MoreSwitchesClient              入口，只做装配
+  keybind/SettingsKeybinds        J 键绑定与开关界面逻辑
+  i18n/ClientLanguageReload       资源重载时读取语言文件
+  feature/ClientFeature           功能模块契约
+  feature/ClientFeatures          开关 id → 模块 的唯一映射
+  feature/WindowLockModule        功能一：状态与开关联动
+  feature/GameWindowLock          功能一：SDL 窗口锁定的全部实现
+  feature/FireworkCooldownModule  功能二：冷却判定
+  feature/RainSleepModule         功能三：状态与开关联动
+  feature/DropKeyModule           功能四：状态与开关联动
+  feature/FullscreenKeyModule     功能五：状态与开关联动
+  mixin/MixinMinecraftFullscreen  功能五：拦 F11（只影响按键）
+  feature/EffectParticleModule    功能六：状态与开关联动
+  mixin/MixinClientLevelParticles 功能六：丢弃药水粒子
+  mixin/MixinMultiPlayerGameMode  功能二：唯一的注入点
+  ui/SettingsScreen               设置界面
+  ui/ToggleSwitchWidget           左右拨动开关控件
+  ui/SettingsHint                 按键提示文字
+
+分层原则: 界面不包含任何功能逻辑，功能模块不包含任何绘制代码，
+mixin 只做转发。新增一个开关 = 在 SwitchIds 加一行 + 实现一个
+ClientFeature + 在 ClientFeatures 注册 + 补两门语言的四个键，
+设置界面一行都不用改。
+
+
+三、界面
+----------------------------------------------------------------
+26.x 是"提取式 GUI"：覆写 render() 能编译通过但永远不会被调用，
+必须覆写 extractRenderState(GuiGraphicsExtractor, ...)。本模组按此实现。
+
+布局完全由可用高度推导，不写死像素：
+
+  titleBlockHeight = 标题实际行数 × 行距 + 语言按钮（放不下时额外占一行）
+  available        = height - titleBlockHeight - FOOTER_HEIGHT
+  rowHeight        = max(12, available / 行数)
+  lineBudget       = rowHeight / LINE_STEP            （每行可容纳的文本行数）
+
+每一行按 lineBudget 决定画几行文本，所以窗口再矮也不会出现行压行：
+  3 行：中文名 / 英文名 / 描述（描述过长时自动换成两行）
+  2 行：中文名 / 描述
+  1 行：中文名
+
+文本宽度用 Font.plainSubstrByWidth 量出再加省略号，而不是用剪刀裁剪——
+剪刀会把字符切成两半。
+
+语言按钮先尝试缩窄以放在标题右侧；窄到 64px 仍放不下时才移到标题下方。
+这是唯一会移动位置的控件，且移动由可用宽度决定，不是硬编码。
+
+界面 isPauseScreen() 返回 false：世界继续运行，才能在界面里观察冷却计时。
+
+
+四、功能一实现（锁定窗口大小）
+----------------------------------------------------------------
+全部 SDL 调用集中在 GameWindowLock，三个机制叠加：
+
+1. SDL_SetWindowResizable(handle, false)
+   去掉 WS_THICKFRAME，这是边框能缩放的根源；同时双击标题栏不再最大化。
+
+2. SDL_SetWindowMinimumSize / SDL_SetWindowMaximumSize 都设成锁定时的尺寸
+   让操作系统层面也无法改变窗口大小。
+
+3. 每个客户端 tick 调 enforce()，读回窗口位置，与锁定值比较，不同就写回。
+   Windows 在按住标题栏时进入系统级 modal move loop，外部无法取消，
+   所以拖动过程中窗口会跟随，松手后立刻被拉回。最终状态恒等于锁定位置。
+
+保护条件:
+  · 全屏 / 最大化 / 最小化时不做纠正 —— F11 是玩家的正当操作，不能对抗。
+  · correcting 静态标志防止自己的写入再次触发纠正（无限递归）。
+  · 窗口 handle 为 0 时拒绝启用，并把 applied 置回 false，
+    不让开关出现"显示开启但实际没生效"的状态。
+
+关闭时反向恢复: Resizable(true)、最小尺寸回 320×240（原版值）、
+最大尺寸回 0xFFFF（SDL 的"无上限"）。三个值都必须恢复，
+只恢复 resizable 会留下一个隐形的尺寸上限。
+
+
+五、功能二实现（烟花冷却）
+----------------------------------------------------------------
+关键判断: MultiPlayerGameMode#useItem 在方法内部就把包发给服务器了，
+所以在 RETURN 注入再改返回值是"已经发出去了才拒绝"，等于无效。
+必须注入 HEAD 并 cancel，才能让这次点击根本不产生。
+
+  @Inject(method = "useItem",   at = @At("HEAD"), cancellable = true, require = 1)
+  @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true, require = 1)
+
+两条都要拦，因为烟花火箭有两条使用路径（空中加速 / 对地面放置）。
+
+返回 InteractionResult.FAIL：它的 consumesAction() 为 true 而不代表成功，
+正好表示"这次点击已被吃掉、不要有任何后续反应"。
+
+计时用 System.currentTimeMillis() 而不是 tick 计数：
+客户端卡顿时两次点击可能落在同一 tick，而卡顿正是玩家连点的场合。
+同时给客户端冷却表 addCooldown(60 tick)，让物品栏显示原版冷却动画。
+
+require = 1 是有意的：将来版本若改了方法名，游戏会在启动时直接报错，
+而不是让开关静默失效。
+
+
+六、功能三实现（下雨就可以睡觉）
+----------------------------------------------------------------
+26.3 把"能不能睡"这一条从方法里的判断抽成了数据：睡眠前先问
+BedRule.canSleep(Level)，规则是 WHEN_DARK 时它会调用 Level.isDarkOutside()。
+也就是说，白天不能睡是因为"天不黑"，而不是因为"不是夜晚"。
+
+因此只要让 canSleep 在"下雨 + 开关开启"时返回 true 即可：
+
+  @Inject(method = "canSleep", at = @At("RETURN"), cancellable = true, require = 1)
+
+选择 RETURN 注入而不是 HEAD，有两个原因：
+  · 只在原版已经判定为 false 时才有机会改成 true，永远不会把"允许"改成"拒绝"；
+  · 规则对象是共享的（BedRule.CAN_SLEEP_WHEN_DARK 是静态常量），改规则本身
+    会污染全局，改一次调用的返回值则不会。
+
+注入点放在公共源集（mixin/MixinBedRule），因为 canSleep 由服务端和客户端
+都会调用；只放客户端会导致单人游戏的整合服务端不生效。
+
+下雨判定用 level.canHaveWeather() && level.isRaining()：前者排除下界/末地
+（这两个维度没有天气，行为必须保持原版），后者用原版自己的阈值
+（rainLevel > 0.2），不自己另定标准。
+
+"跳到第二天"没有自己实现：原版在玩家入睡后，由 ServerLevel 的睡眠逻辑
+调用 moveToTimeMarker(..., WAKE_UP_FROM_SLEEP) 推进时间。我们只放行"能不能睡"，
+后续完全走原版，所以不会出现"睡了但天没亮"或"跳过时间的方式和原版不一致"。
+
+
+七、功能四与功能五的实现
+----------------------------------------------------------------
+两个功能都是"拦掉一个动作"，但要在正确的层次上拦。
+
+Q 键丢弃:
+  Minecraft.handleKeybinds 里读 keyDrop，然后调用
+  MultiPlayerGameMode.dropItem(LocalPlayer, boolean)。
+  这个方法内部做了两件事: 从背包移除物品、发送 ServerboundPlayerActionPacket。
+  两件事都在方法体内，所以必须在 HEAD 取消；在 RETURN 取消的话物品已经
+  从客户端背包里消失了。
+  参数 boolean 同时覆盖普通丢一个和 Ctrl+Q 丢整叠，一个注入点即可。
+
+F11 全屏:
+  Minecraft.handleKeybinds 里读 keyFullscreen，然后调用私有的
+  Minecraft.toggleFullscreen()。而这个私有方法的唯一调用方就是按键处理，
+  所以取消它等于只关掉 F11: 视频设置里的全屏按钮、启动参数、
+  操作系统快捷键都不经过这里，不受影响。
+  必须 HEAD 取消: 方法内部会调整窗口尺寸并重建 framebuffer，
+  事后再取消会留下改了一半的显示状态。
+
+两个判定都写成 DropKeyRule / FullscreenKeyRule 里的纯布尔函数，
+所以有单测覆盖"开关打开时拦、关闭时放行"这两条。
+
+八、功能六的实现（关闭药水粒子）
+----------------------------------------------------------------
+26.3 里药水粒子是这样产生的: 实体身上的 MobEffectInstance 通过
+MobEffect.createParticleOptions 生成 ParticleOptions，存进同步数据
+DATA_EFFECT_PARTICLES；客户端在 LivingEntity.tickEffects() 里读出这个列表，
+按概率调 Level.addParticle 把它变成真正可见的粒子。
+
+拦截层次的选择:
+  · 不去碰 MobEffectInstance / DATA_EFFECT_PARTICLES —— 那是效果数据本身，
+    改它会连带影响效果的同步与判定，风险大且违背"不影响效果"的要求。
+  · 也不在粒子引擎里过滤列表 —— 那是每帧遍历，代价高。
+  · 改在 ClientLevel.doAddParticle 的 HEAD 取消，一次判断即可，
+    而且这是两个公开 addParticle 重载共同的落点，一个注入点覆盖全部。
+
+只按类型过滤: ENTITY_EFFECT（持续生效药水的螺旋）与
+INSTANT_EFFECT（瞬间药水的爆裂）。火焰、烟、水花、爆炸、红石等一律放行。
+
+因为只取消了"变成可见粒子"这一步，效果数据、持续时间、等级、
+以及服务端的任何判定都没有变——这正是需求里"不影响药水效果"的保证。
+
+运行时已验证: 加 -Dmixin.debug.export=true 后导出的
+ClientLevel.class 里，doAddParticle 方法开头确实出现了
+handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
+
+九、界面滚动
+----------------------------------------------------------------
+功能从三个增加到五个后，320x180 下每行只剩 20px，只够一行文字，
+描述被挤没了。改法是让布局不再"把剩余空间均分给每一行":
+
+  · 行高固定为 PREFERRED_ROW_HEIGHT（名称 + 最多两行描述）；
+  · 装不下时不再压缩行高，而是让列表滚动；
+  · 只有当窗口矮到连 MIN_ROW_HEIGHT（名称 + 一行描述）都放不下时，
+    才继续压缩，然后照旧滚动。
+
+滚动区域（viewport）从标题栏下沿到页脚上沿，行用 scissor 裁剪到该区域，
+所以半行永远不会画到标题或完成按钮上。滚动时开关按钮跟着一起移动；
+滚出可视区的开关同时置 visible=false 与 active=false，
+否则玩家可能点到一个看不见的开关。
+
+滚动条只在内容超出时才画，含轨道、按可见比例计算的滑块、两端箭头；
+滚轮滚动一行，点箭头滚一行，点轨道跳到该位置。滑块本身不做拖拽:
+拖拽需要一个捕获鼠标的子控件，这个界面刻意没有引入。
+
+单元测试: 20 个（冷却计时 6 + 烟花门控 4 + 雨天睡觉 4 + Q 键 2 + F11 2 + 药水粒子 2）。
+
+九、多语言实现
+----------------------------------------------------------------
+Minecraft 的 Component.translatable 只能跟随游戏语言，无法实现
+"游戏英文、模组中文"。因此界面文字走 ModLang：
+它在资源重载时用 ResourceManager 读 assets/moreswitches/lang/{zh_cn,en_us}.json，
+存成两张表，按界面语言取值；取不到时先回退英文，再回退键名。
+
+同一批 JSON 同时被原版读取（按键名称、分类名），所以文件格式仍是标准格式。
+键名一律带 moreswitches. 前缀，避免与其他模组撞键。
+
+关键约定: 每个语言文件只放该语言自己的文本。早期版本把中文放在 name/desc、
+英文放在 name_en/desc_en，且两份文件内容完全相同，结果英文界面显示的是
+中文描述（截图可见）。现在 zh_cn.json 与 en_us.json 各自只有本语言文本，
+行内也不再并列显示另一种语言。
+
+校验方式: tools/check-lang.ps1 按 ModLang 的同一规则打印界面实际会显示的
+每一行，并比对两份文件的键集合是否一致；改语言文件后直接跑它，不必开游戏。
+
+
+七、验证记录（真机，非推断）
+----------------------------------------------------------------
+实例: D:\26.3F\.minecraft\versions\26.3-Fabric（92 个模组共存）
+
+已验证（三个开关版本，真机）:
+  · 客户端启动加载本模组，common init / client ready / 语言表 22 条均正常
+  · 设置界面正常渲染，标题、语言按钮、两行开关、完成按钮位置无重叠
+  · 点击开关：灰色→绿色、旋钮左→右，config/moreswitches.json 立即写入
+  · 窗口锁定 开 → 用 Win32 MoveWindow 强行改成 900×600，窗口尺寸不变
+  · 窗口锁定 关 → 同样的调用成功把窗口改成 1100×700
+  · 语言按钮循环 自动 → 中文 → English → 自动，界面文字随之切换
+  · 切换后整屏文字全部跟随：中文界面全中文、英文界面全英文（含描述），
+    见 docs/界面-中文.png 与 docs/界面-英文.png
+  · 第三个开关出现在第三行，名称与描述正确，开关可点击并写入配置
+  · 单元测试 14 个全部通过（冷却计时 6 个 + 烟花门控 4 个 + 雨天睡觉判定 4 个）
+  · 全程日志无来自本模组的 ERROR / WARN / 异常
+
+未验证（如实标注）:
+  · 烟花冷却的实际点击拦截未在游戏内用手点验证（缺少鞘翅+烟花的现场），
+    仅验证了注入点存在于 26.3 的 useItem / useItemOn 且启动无 Mixin 报错。
+  · 全屏（F11）与锁定同时开启的交互未实机验证——代码里对此做了显式跳过，
+    但没有实测截图。
+  · 多显示器 DPI 变化时的窗口纠正未验证。
+  · 雨天睡觉：缺少"白天下雨时真的能躺上床并被叫醒"的完整人工操作验证。
+    在游戏进程内已实测到决定性数据（探针为临时诊断代码，已移除）:
+
+        服务端 isRaining=true、客户端 rainLevel=1.0、darkOutside=false（白天）
+        RainSleepRule.allowsSleep 返回 true
+
+    并且 canSleep 的字节码确认已注入（导出的 BedRule.class 里能看到
+    handler$xxx$moreswitches$allowSleepInRain 的调用）。也就是说
+    "白天 + 下雨 → 允许入睡"这一条判定成立；仅差最后一步人工躺床。
+
+  · 烟花冷却：同样在进程内实测到门控行为——
+    第一次使用放行（false），第二次拦截（true），剩余 3 秒，
+    与期望完全一致；未做的是在游戏里真的手持烟花连点两下。

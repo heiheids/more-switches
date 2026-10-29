@@ -1,0 +1,444 @@
+更多开关功能 (More Switches) — 使用说明 (Chinese / English)
+================================================================
+
+作者: 黑山大叔
+主页: https://space.bilibili.com/19428259
+核心结构来自: https://crates.io/crates/lighty-launcher
+
+适用版本: Minecraft 26.3 · Fabric (Fabric Loader 0.19.5+ / Fabric API)
+Java: 25
+
+
+一、这是什么
+----------------------------------------------------------------
+一个"一页开关"式的实用工具模组。按 J 打开设置界面，界面里一行一个功能，
+右侧是一个左右拨动的开关：灰色=关闭，绿色=开启。当前版本包含六个功能。
+
+  第一行  锁定窗口大小
+  第二行  烟花火箭强制冷却 3 秒
+  第三行  下雨就可以睡觉跳过当天
+  第四行  关闭 Q 键丢弃物品
+  第五行  禁用 F11 全屏
+  第六行  关闭药水粒子效果
+
+功能变多以后，列表可以滚动：把鼠标放在列表上滚轮，或者点右侧滚动条
+两端的箭头、点滚动条轨道。装得下时滚动条会自动隐藏。
+
+所有开关状态保存在 config/moreswitches.json，改完立即写入文件，
+下一次启动游戏会自动恢复上一次的状态。
+
+
+二、安装
+----------------------------------------------------------------
+1. 确认你的整合包/实例已装好 Fabric Loader 0.19.5 或更高版本。
+2. 确认已装 Fabric API（本模组需要它注册按键与资源加载）。
+3. 把 more-switches-1.0.0.jar 放进 .minecraft/versions/<你的版本目录>/mods/
+   （整合包按各自的 mods 目录放）。
+4. 启动游戏。
+
+
+三、快捷键
+----------------------------------------------------------------
+默认按键: J（打开 / 关闭设置界面，同一个键开关）
+
+为什么不是 T: T 是 Minecraft 原版的聊天键。如果本模组抢用 T，
+按 T 时聊天框会被设置界面顶掉，等于聊天键失效。所以默认改用 J，
+J 在原版里没有绑定任何功能，不会拿走任何键。
+
+想改成别的键: 选项 → 控制 → 按键绑定 → 找到分类"更多开关功能"，
+修改"打开设置界面"。改完立即生效，不需要重启。
+
+
+四、功能一: 锁定窗口大小
+----------------------------------------------------------------
+开启后: 游戏窗口无法被拖动，也无法改变大小。
+
+具体表现:
+  · 窗口边缘不再能拉伸（边框失去缩放能力）。
+  · 双击标题栏不会最大化。
+  · 拖动标题栏时窗口会先跟着动，松手后立即回到锁定时的位置；
+    最终位置一定是你开启开关时窗口所在的位置。
+  · 全屏（F11）仍然可以正常使用，全屏状态不会被强行拉回窗口模式。
+
+关闭后: 窗口立即恢复正常，可以任意拖动和缩放。
+
+适用场景: 双屏/多屏、录屏、直播、或者鼠标容易碰到窗口边框时，
+防止误操作把游戏窗口拖歪或拉伸。
+
+
+五、功能二: 烟花火箭强制冷却 3 秒
+----------------------------------------------------------------
+开启后: 每次使用烟花火箭（右键）之后，3 秒内再按右键不会再生效。
+
+  第 1 次右键  → 正常发射 / 加速（同时物品栏出现冷却条）
+  3 秒内再右键 → 无效，不消耗烟花火箭
+  3 秒之后     → 恢复正常
+
+冷却期间，设置界面第二行描述后面会实时显示剩余秒数，物品栏里的
+烟花火箭也会显示和原版一样的冷却动画。
+
+适用场景: 防止手滑连点右键，一瞬间烧掉一整组烟花火箭。
+不影响任何其他物品、方块和实体的交互——只有烟花火箭会被拦下。
+
+说明: 这是纯客户端拦截。它不会修改服务端的数据，也不会给物品添加
+原版冷却组件；因此在多人服务器里同样有效，但服务器端的冷却记录
+不受本模组影响。
+
+
+六、功能三: 下雨就可以睡觉跳过当天
+----------------------------------------------------------------
+开启后: 下雨的时候，白天也能躺到床上睡觉，并直接跳到第二天。
+
+  晴天白天  → 和原版一样，床提示"你只能在夜间或雷暴中入睡"
+  雨天白天  → 可以睡觉，时间直接推进到第二天清晨
+  夜间      → 和原版一样，本来就能睡
+  下界/末地 → 不受影响（这两个维度本来就没有天气，也不能睡觉）
+
+适用场景: 白天下雨不想干等天黑，或者整合包里下雨天就是"该睡了"的信号。
+
+说明: 睡眠的其他限制全部保留——周围有怪物仍然不能睡、需要足够的玩家
+（单人游戏 1 人即可）、床必须放在合适的位置。本开关只把"必须是夜晚"
+这一条放宽为"夜晚或下雨"。
+
+注意: 床的使用判定由服务端执行，所以这一项只在你自己的单人世界/自己
+开的服务器里生效；装在别人服务器的客户端上不会改变对方的判定。
+
+
+七、功能四: 关闭 Q 键丢弃物品
+----------------------------------------------------------------
+开启后: 按 Q 不会再把手里的物品丢出去，Ctrl+Q 丢整叠也一并失效。
+
+适用场景: 紧张战斗或跑图时误按 Q，把贵重的剑或工具丢进岩浆/悬崖。
+
+说明: 只拦"按键丢东西"这一条路径。在物品栏界面里用鼠标把物品拖到
+界面外丢弃、以及创造模式物品栏里的丢弃，都不受影响——那些是另一条路径，
+本开关不会连带关掉它们。
+
+注意: 这是纯客户端拦截，服务端不会收到丢弃请求。多人服务器里同样有效。
+
+
+八、功能五: 禁用 F11 全屏
+----------------------------------------------------------------
+开启后: 按 F11 不再切换全屏。
+
+说明: 只关掉 F11 这个键。视频设置里的全屏按钮、以及操作系统层面的
+窗口操作都不受影响，仍然可以全屏。
+
+适用场景: 录屏或直播时防止误按 F11 打乱画面；或者窗口锁定开着时
+不想让全屏绕开大小锁定。
+
+
+九、功能六: 关闭药水粒子效果
+----------------------------------------------------------------
+开启后: 身上有药水效果时，不再有那些彩色的螺旋粒子在眼前飘。
+
+重要: 只是看不见粒子，药水效果完全不受影响。持续时间、等级、
+力量提升多少、回血速度、夜视亮度……全都和原来一样。
+这一项纯粹是视觉效果，不会让药水变弱，也不会让药水提前消失。
+
+适用场景: 喝速度/力量药水后粒子挡视线，尤其是第一人称近距离战斗；
+或者录制视频时不想让画面被粒子干扰。
+
+说明: 隐藏的是"状态效果粒子"这一种：
+  · 身上持续生效的药水（ENTITY_EFFECT）—— 就是飘在眼前那种
+  · 瞬间药水的爆裂粒子（INSTANT_EFFECT）
+其他粒子（火焰、烟、水花、爆炸、红石等）一律不受影响。
+
+
+十、多语言
+----------------------------------------------------------------
+界面标题右侧有一个语言按钮，点一下循环切换:
+
+  自动  → 中文 → English → 自动
+
+  · 自动: 跟随 Minecraft 的游戏语言。游戏是中文就显示中文，
+    其他语言显示英文。
+  · 中文 / English: 强制模组界面使用该语言，与游戏语言无关。
+
+切换只影响本模组自己的界面文字，不会修改你的游戏语言设置。
+所选语言同样保存在 config/moreswitches.json 的 language 字段里。
+
+切到哪种语言，整个界面就完全使用哪种语言：标题、语言按钮、每个功能的
+名称与描述、按键提示、完成按钮全部切换，不会中英混排。
+（早期版本曾在同一行同时显示中英文，英文界面下会残留中文，已修正。）
+
+
+十一、配置文件
+----------------------------------------------------------------
+路径: <游戏目录>/config/moreswitches.json
+
+示例:
+{
+  "language": "auto",
+  "switches": {
+    "window_lock": false,
+    "firework_cooldown": true,
+    "rain_sleep": false
+  }
+}
+
+  · language: auto / zh_cn / en_us
+  · window_lock: 功能一（锁定窗口大小）
+  · firework_cooldown: 功能二（烟花火箭强制冷却）
+  · rain_sleep: 功能三（下雨就可以睡觉）
+  · drop_key_lock: 功能四（关闭 Q 键丢弃物品）
+  · fullscreen_key_lock: 功能五（禁用 F11 全屏）
+  · effect_particles_off: 功能六（关闭药水粒子效果）
+
+可以直接用文本编辑器改，改完重启游戏生效。游戏里拨开关会立即
+覆盖这个文件，不需要手动改。
+
+
+十二、卸载
+----------------------------------------------------------------
+从 mods 目录删除 more-switches-1.0.0.jar 即可。
+config/moreswitches.json 可以一并删除，也可以留着（不影响其他模组）。
+本模组不添加任何方块、物品、配方或世界数据，删除后存档完全不受影响。
+
+
+十三、常见问题
+----------------------------------------------------------------
+问: 按 J 没反应？
+答: 先确认界面里没有别的界面打开（聊天框、背包等）。J 只在没有任何
+    界面打开时才会唤起设置界面，这样它不会抢走别的界面的按键。
+    如果按键被改过，去 选项 → 控制 → 按键绑定 里确认。
+
+问: 开了锁定窗口，为什么拖动标题栏时窗口还是会动一下？
+答: Windows 拖动窗口时进入的是系统级的移动循环，任何程序都无法在
+    拖动过程中取消它。本模组在每一 tick 检查位置并把窗口拉回原位，
+    所以松手后一定回到锁定位置。这是该系统机制的限制，不是 bug。
+
+问: 烟花冷却会不会影响鞘翅飞行？
+答: 不影响飞行本身，只影响"再次使用烟花火箭"这个动作——正好是
+    连点刷火箭的场景。
+
+问: 可以在服务器上用吗？
+答: 可以。两个功能都只作用于你自己的客户端，服务器不需要安装。
+
+
+More Switches — Usage (English)
+================================================================
+
+Author: 黑山大叔 (Heishan Dashu)
+Homepage: https://space.bilibili.com/19428259
+Core structure inspired by https://crates.io/crates/lighty-launcher
+
+Minecraft 26.3 · Fabric (Fabric Loader 0.19.5+ / Fabric API) · Java 25
+
+
+1. What it is
+----------------------------------------------------------------
+A one-page switch panel. Press J to open it. Each row is one feature and the
+control on the right is a sliding switch: grey = off, green = on.
+
+  Row 1  Lock Window Size
+  Row 2  Firework Rocket Cooldown (3 seconds)
+  Row 3  Sleep Through Rain
+  Row 4  Disable Q Drop
+  Row 5  Disable F11 Fullscreen
+  Row 6  Hide Potion Particles
+
+The list scrolls once it no longer fits: use the wheel over the list, the arrows
+at the ends of the scrollbar, or click the track. The scrollbar hides itself when
+everything fits.
+
+Every switch is stored in config/moreswitches.json the moment you flip it, so
+your choices come back on the next launch.
+
+
+2. Installing
+----------------------------------------------------------------
+1. Fabric Loader 0.19.5 or newer.
+2. Fabric API must be installed (the mod uses it for key bindings).
+3. Drop more-switches-1.0.0.jar into the mods folder of your instance.
+4. Start the game.
+
+
+3. The key
+----------------------------------------------------------------
+Default: J (opens and closes the screen; it is a toggle).
+
+Why not T: T is vanilla chat. If this mod took T, pressing T would replace the
+chat screen with the settings screen, so chat would silently stop working.
+J is unbound in vanilla, so nothing is taken away.
+
+To change it: Options → Controls → Key Binds → category "More Switches",
+rebind "Open settings screen". Takes effect immediately.
+
+
+4. Switch 1 — Lock Window Dragging
+----------------------------------------------------------------
+On: the game window can be neither dragged nor resized.
+
+  · The window border stops resizing the window.
+  · Double-clicking the title bar no longer maximises it.
+  · Dragging the title bar moves the window with the cursor, and it snaps back
+    to the locked position as soon as you let go. The final position is always
+    the position the window had when you turned the switch on.
+  · F11 full screen still works; the lock does not fight full screen.
+
+Off: the window behaves normally again.
+
+Useful for multi-monitor setups, recording, streaming, or when the mouse tends
+to catch the window border.
+
+
+5. Switch 2 — Firework Rocket Cooldown
+----------------------------------------------------------------
+On: after using a firework rocket (right click), right click does nothing for
+three seconds.
+
+  1st right click   → rocket launches / boosts, cooldown bar appears
+  within 3 seconds  → click ignored, no rocket consumed
+  after 3 seconds   → normal again
+
+While the cooldown runs, the second row of the screen shows the seconds left,
+and the rocket in your hotbar shows the vanilla cooldown sweep.
+
+Useful for stopping an accidental double click from burning a whole stack of
+rockets. No other item, block or entity interaction is affected — only firework
+rockets are filtered.
+
+Note: this is a client-side interception. It does not touch server data and does
+not add a vanilla cooldown component, so it works on multiplayer servers too,
+while the server's own cooldown table is left untouched.
+
+
+6. Switch 3 — Sleep Through Rain
+----------------------------------------------------------------
+On: while it rains, a bed also works in daylight, and sleeping skips straight to
+the next day.
+
+  dry daytime   -> vanilla message: you can only sleep at night or during a thunderstorm
+  rainy daytime -> the bed works, and time advances to the next morning
+  night         -> unchanged
+  Nether / End  -> unchanged (no weather, and sleeping is impossible there anyway)
+
+Useful when a rainy day would otherwise mean waiting for dusk, or when a modpack
+treats rain as the signal to sleep.
+
+Note: every other sleep restriction still applies — no monsters nearby, enough
+players (one is enough in single player), a properly placed bed. Only "it must be
+night" is relaxed to "night or rain".
+
+Note: the bed check runs on the server, so this applies in your own single-player
+world (or a server you run). Joining someone else's server does not change that
+server's decision.
+
+
+7. Switch 4 — Disable Q Drop
+----------------------------------------------------------------
+On: pressing Q no longer throws the held item out, and Ctrl+Q no longer drops the
+whole stack.
+
+Useful when a mis-press in combat or while travelling would throw a good sword or
+tool into lava or off a cliff.
+
+Note: only the key is blocked. Dragging an item out of the inventory window, and
+the creative inventory's own drop, are different code paths and keep working.
+
+Note: this is a client-side block — the server never receives the drop request. It
+works the same way on a multiplayer server.
+
+
+8. Switch 5 — Disable F11 Fullscreen
+----------------------------------------------------------------
+On: F11 no longer toggles fullscreen.
+
+Note: only the key is disabled. The fullscreen button in video settings, and the
+operating system's own window controls, still work.
+
+Useful when recording or streaming and an accidental F11 would disturb the
+picture, or when the window-size lock is on and fullscreen should not get around
+it.
+
+
+9. Switch 6 — Hide Potion Particles
+----------------------------------------------------------------
+On: while a potion is active, the coloured swirls no longer float in front of the
+camera.
+
+Important: only the particles are hidden. The effect itself is completely unchanged
+— duration, amplifier, how much strength it grants, how fast it heals, how bright
+night vision is. This is purely visual; it does not weaken a potion and does not
+make it end sooner.
+
+Useful after drinking a speed or strength potion in close first-person combat,
+where the particles block the view, or when recording and the swirls clutter the
+picture.
+
+Note: only status-effect particles are hidden — the swirl of an active potion
+(ENTITY_EFFECT) and the burst of an instant potion (INSTANT_EFFECT). Every other
+particle (fire, smoke, splash water, explosions, redstone) is untouched.
+
+
+10. Language
+----------------------------------------------------------------
+The button at the right of the title cycles:
+
+  Auto → 中文 → English → Auto
+
+  · Auto follows the Minecraft language (Chinese → Chinese, anything else →
+    English).
+  · 中文 / English pins the mod's own text regardless of the game language.
+
+Only the mod's own screen changes; your game language setting is never touched.
+The choice is stored in the "language" field of config/moreswitches.json.
+
+Whichever language is active is used for the whole screen: title, language button,
+every switch name and description, the key hint and the Done button. Nothing is
+printed in the other language. (An earlier build showed both languages on one row,
+which left Chinese text on an English screen; that is fixed.)
+
+
+11. Configuration file
+----------------------------------------------------------------
+<game dir>/config/moreswitches.json
+
+{
+  "language": "auto",
+  "switches": {
+    "window_lock": false,
+    "firework_cooldown": true,
+    "rain_sleep": false
+  }
+}
+
+  · language: auto / zh_cn / en_us
+  · window_lock: switch 1
+  · firework_cooldown: switch 2
+  · rain_sleep: switch 3
+  · drop_key_lock: switch 4
+  · fullscreen_key_lock: switch 5
+  · effect_particles_off: switch 6
+
+Edit it by hand if you like; changes apply on the next launch. Flipping a switch
+in game rewrites the file immediately.
+
+
+12. Uninstalling
+----------------------------------------------------------------
+Delete more-switches-1.0.0.jar from the mods folder. config/moreswitches.json
+can be deleted too, or left in place (it does not affect other mods). The mod
+adds no blocks, items, recipes or world data, so removing it cannot damage a
+save.
+
+
+13. FAQ
+----------------------------------------------------------------
+Q: Pressing J does nothing.
+A: J only opens the screen when no other screen is open (chat, inventory, …),
+   so it can never steal a key press from a screen you are typing in. If the
+   binding was changed, check Options → Controls → Key Binds.
+
+Q: With the lock on, the window still moves a little while I drag the title bar.
+A: Windows runs a modal move loop while the title bar is held, and no program
+   can cancel it mid-drag. The mod re-applies the locked position every tick, so
+   the window always ends up exactly where it was locked.
+
+Q: Does the firework cooldown break elytra flight?
+A: No. It only blocks a second rocket use during the three seconds — exactly the
+   rapid-click case it is meant to stop.
+
+Q: Does it work on a server?
+A: Yes. Both features act on your own client; the server does not need the mod.

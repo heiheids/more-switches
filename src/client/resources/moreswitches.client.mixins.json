@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.heishandashu.moreswitches.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "environment": "client",
+  "client": [
+    "MixinMultiPlayerGameMode",
+    "MixinMinecraftFullscreen",
+    "MixinClientLevelParticles"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

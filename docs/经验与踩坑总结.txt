@@ -1,0 +1,292 @@
+更多开关功能 — 工程经验与踩坑总结
+================================================================
+日期: 2026-10-29
+作者: 黑山大叔  https://space.bilibili.com/19428259
+环境: Minecraft 26.3 / Fabric / Java 25 / Windows / DSH 沙箱
+
+本文只记录这次真实踩到并解决的问题，不含推断。
+
+
+一、构建环境（最有价值的几条）
+----------------------------------------------------------------
+
+1. Gradle 守护进程在受限沙箱里起不来：CreatePipe error=5
+   现象: 命令行执行 gradle 立刻失败，报 "A problem occurred starting process
+   'Gradle build daemon'"，--stacktrace 里是 CreatePipe error=5（拒绝访问）。
+   原因: 沙箱不允许该 JVM 创建子进程管道，与 Gradle 本身无关。
+   解决: 不在 ops_bash 里跑 Gradle，改用宿主机 PowerShell（MCP）执行
+   gradle.bat。同一份工程、同一个 JDK，只是换了执行通道。
+   教训: "构建工具坏了"之前先分清是工具坏了还是执行通道被限制了。
+   判据: 直接 new ProcessBuilder("cmd","/c","echo hi").start() 也失败 ⇒
+   是进程创建被限制，不是 Gradle 的问题。
+
+2. java.util.zip 在沙箱里把每个 zip 都当成只读
+   现象: Loom 报 "Failed to split minecraft"，或者写 jar 时抛
+   ReadOnlyFileSystemException，但文件系统本身是可写的（Files.write 正常）。
+   原因: ZipFileSystem.checkWritable() 在受限环境下拿到的 isWritable 恒为 false。
+   解决: 用 --patch-module jdk.zipfs=<重编译掉该校验的 zipfs 目录> 注入，
+   写在 org.gradle.jvmargs 里。
+   验证方法: 先用一个小程序 newFileSystem(jar) 后 Files.writeString 探针，
+   确认是否命中同一个问题，再决定要不要上补丁。
+
+3. JDK 版本错配
+   26.3 需要 Java 25 编译，但 Gradle 自身跑在 25 上会崩在 native services。
+   本机 25 可用（Temurin 25.0.4.1），实际用 25 跑 Gradle 正常；
+   若遇到 native-platform.dll 相关崩溃，则 Gradle 用 21、toolchain 指 25。
+
+4. 中文路径 + 编码（两个方向相反，最容易混）
+   · .java 必须 UTF-8 无 BOM + LF。
+   · gradle.properties 里的路径必须写 \uXXXX 转义，写真字中文会被
+     java.util.Properties 按 Latin-1 读坏，报 InvalidPathException。
+   · .ps1 有中文就必须带 BOM，否则 PowerShell 5.1 按 GBK 解码。
+     本次因此出过一次事故：脚本里的中文路径被解释成乱码目录，
+     在 D:\ 下真的创建了一个乱码文件夹。
+     最终做法: 启动脚本写成纯 ASCII，路径全部用 $PSScriptRoot 推导，
+     从此不可能再错。
+
+
+二、启动真机验证
+----------------------------------------------------------------
+
+5. 不要用 gradlew runClient 当验收
+   那证明的是开发环境能跑，不是玩家装的 jar 能跑。
+   自己按实例的 version JSON 拼命令行，classpath 才不可能和实例漂移。
+
+6. 版本隔离的实例：--gameDir 必须是版本目录本身
+   传给启动器根目录会静默加载不到任何模组，日志里 mod 列表是空的。
+
+7. 沙箱只允许写工程目录 ⇒ 需要一个"影子游戏目录"
+   现象: 游戏在 D:\26.3F\... 启动时崩在
+   AccessDeniedException: ...\downloads\log.json。
+   原因: 26.x 启动时要在 gameDir/downloads 建下载队列日志。
+   解决: 在工程目录内做一个 _build\game，把 mods / config / options.txt /
+   log4j2.xml 复制进去，--gameDir 指向它。存档同理。
+   ⚠ 复制存档时注意：若源存档里有被占用/锁定的文件（例如地图模组的
+   数据目录），Copy-Item 会静默漏文件，得到一个没有 level.dat 的坏存档。
+   本次就因此先加载失败过一次。判据: 复制完必须检查 level.dat 是否存在。
+
+8. LWJGL 原生库
+   现象: UnsatisfiedLinkError: Failed to locate library: lwjgl.dll。
+   原因: 把 SharedLibraryExtractPath / java.io.tmpdir 指到了只读或空目录。
+   解决: 指向工程内可写目录（_build\run\natives、_build\run\tmp）。
+   注意 26.3 的实例 libraries 里原生库是 *-natives-windows.jar 形式，
+   靠 classpath 提供，不要试图去实例里找解压好的 dll。
+
+9. 启动脚本被拦
+   PowerShell 默认执行策略可能禁止 .ps1，用
+   powershell -ExecutionPolicy Bypass -NoProfile -File xxx.ps1 启动。
+
+
+三、26.3 Fabric 的具体 API 坑
+----------------------------------------------------------------
+
+10. 提取式 GUI
+    覆写 render() 能编译通过但永远不被调用，症状是界面一片空白、日志无声。
+    必须覆写 extractRenderState(GuiGraphicsExtractor, int, int, float)。
+
+11. KeyMapping 的分类变了
+    KeyMapping.Category 是 record，要用 KeyMapping.Category.register(Identifier)
+    创建；分类名由 key.category.<namespace>.<path> 解析。
+    Fabric 的 helper 也改名了: KeyBindingHelper → KeyMappingHelper。
+
+12. Font.split 要 FormattedText，不是 String
+    传 String 编译报"不兼容的类型: String无法转换为FormattedText"。
+    传 Component.literal(s) 即可。
+
+13. FormattedCharSequence 没有 getString()
+    想取回字符串只能自己 accept 拼接。直接把它交给
+    graphics.text(font, sequence, ...) 更省事。
+
+14. InteractionResult 在 26.3 是接口
+    SUCCESS / FAIL / PASS 都是实现类实例；FAIL.consumesAction() == true，
+    正是"吃掉这次点击但不代表成功"的语义。
+
+
+四、功能实现上的关键判断
+----------------------------------------------------------------
+
+15. 烟花冷却必须注入 HEAD 而不是 RETURN
+    MultiPlayerGameMode.useItem 在方法体内部就发出了 serverbound 包。
+    在 RETURN 改返回值只是"发完再拒绝"，服务器那边已经收到并消耗了。
+    判断方法: javap -c 看方法里有没有 send / startPrediction 调用。
+    顺带: 烟花有两条使用路径（useItem 空中加速、useItemOn 对地放置），
+    两条都要拦，只拦一条会漏一半。
+
+16. 窗口"锁定拖动"无法做到拖不动，只能做到拖完回原位
+    Windows 按住标题栏会进入系统级 modal move loop，外部程序无法在拖动中
+    取消它（SDL 的 hit-test 回调返回 NORMAL 也只是让标题栏不再是 HTCAPTION，
+    仍然要在下一帧纠正）。因此实际效果是：拖动时跟随，松手后立即回到
+    锁定位置。文档里如实写清楚，不要让用户以为是 bug。
+
+17. 恢复窗口锁必须恢复三个值
+    Resizable(true) + 最小尺寸回 320×240 + 最大尺寸回 0xFFFF。
+    只恢复 resizable 会留下一个隐形的尺寸上限，之后窗口再也长不大，
+    而且很难联想到是这个模组干的。
+
+18. 功能与界面分离带来的直接好处
+    本次界面布局改了 4 轮（键名缺失、标题重叠、行重叠、文本截断），
+    功能模块（窗口锁定、烟花冷却）一行都没改。
+
+
+五、界面布局（本次返工最多的地方）
+----------------------------------------------------------------
+
+19. 先说结论: 不要用"最小行高"兜底，要按可用高度算行高
+    第一版给 rowHeight 设了下限（34px），结果 320×180 GUI 空间时
+    两行行高 34 + 34 = 68 超出可用区域，直接行压行。
+    正解: rowHeight = max(12, available / 行数)，再由 rowHeight 反推
+    这一行能画几行文字。窗口矮 → 少画一行字，而不是把行挤出屏幕。
+
+20. 键名缺前缀是最隐蔽的 bug
+    语言文件里写的是 moreswitches.switch.window_lock.name，
+    代码里却拼成 switch.window_lock.name。结果界面显示的是原始键名，
+    既不报错也不崩溃。这类问题只能靠真机截图发现，
+    写完语言键后一定要在游戏里看一眼。
+
+21. 标题和右上角按钮会撞
+    居中标题的右边界 = width/2 + 标题半宽；按钮左边界 = width - 边距 - 按钮宽。
+    窄窗口时两者重叠。正解: 先算按钮可用宽度，不足下限才把按钮移到标题下方，
+    并把标题区高度算进布局（否则移到下面的按钮又会被行盖住）。
+
+22. 不要用剪刀裁剪文本
+    用 enableScissor 裁一行文字会把字切成半个。正解:
+    font.plainSubstrByWidth 量宽 + 省略号。
+
+23. 中文描述比英文长，必须允许换行
+    中文一行放不下时用 font.split 换到第二行；只有 rowHeight 容得下
+    三行文本时才换，否则会挤出本行。
+
+
+六、第二个功能之后追加的经验（第三个开关与多语言修正）
+----------------------------------------------------------------
+
+27. 多语言最常见的错法：把两种语言塞进同一条记录里
+    现象: 英文界面下，功能名是英文、描述却是中文。
+    原因: 语言文件里 name/desc 存的是中文原文，name_en/desc_en 存英文，
+    而代码固定读 name/desc；两份语言文件内容还完全一样。
+    正解: 每个语言文件只放本语言文本，代码只读当前语言文件。
+    判据: 如果某个键的"中文值"在 en_us.json 里也出现，那就是错的。
+
+28. 光靠"两份文件键集合一致"的自检测试抓不到这类错
+    键集合一致只能证明没漏键，不能证明值属于正确的语言。
+    正解: 加一个"按当前语言打印界面实际会显示的每一行"的脚本
+    （tools/check-lang.ps1），人眼扫一遍就能看出英文列里有没有中文。
+    这和"资源格式必须对照原版验证"是同一条纪律。
+
+29. 26.3 把睡眠条件变成了数据，不是方法里的 if
+    想改"什么情况能睡"，不要去 mixin 玩家或床的方法，先找 BedRule。
+    BedRule.canSleep(Level) 就是唯一的判定入口；WHEN_DARK 规则内部查的是
+    Level.isDarkOutside()。找错层次会写出一堆没必要的注入。
+
+30. 对共享规则对象要改"返回值"，不要改"对象"
+    BedRule.CAN_SLEEP_WHEN_DARK 是静态常量，被所有床共用。
+    在 RETURN 上改这一次调用的返回值，作用域天然就是"这一次交互"；
+    去改规则对象本身则会影响全局，还可能被其他模组读到。
+
+31. 注入点放在哪个源集，决定了它在单人游戏里有没有效
+    这次把 MixinBedRule 放进了 src/main，但包名写成了
+    com.heishandashu.moreswitches.client.mixin，被 Loom 编到客户端源集里，
+    启动直接报 ClassNotFoundException: The specified mixin ... was not found。
+    教训: 拆分源集（splitEnvironmentSourceSets）后，mixin 配置里的 package
+    必须与类的实际包名、以及它所在的源集三者一致。加完 mixin 先看一眼
+    jar 里类的路径，再启动。
+
+32. 单元测试放对位置才有价值
+    把"冷却窗口"抽成 CooldownClock（无 Minecraft 类型），把"雨天能否睡"
+    抽成 RainSleepRule 的纯函数，两者都能用 JUnit 在几秒内验证边界
+    （正好 3000ms 放行、下界不受影响等）。
+    留在 Minecraft 类型里的部分（哪只手、哪个物品）则由真机截图和日志验证。
+    这不是"用测试代替验证"，而是把能确定的部分先确定下来。
+
+33. 自动化截图的三个坑（这次花了最多时间）
+    · 截后台窗口：CopyFromScreen 抓的是桌面，被别的窗口盖住就截错。
+    · 截未激活的 GL 窗口：窗口没被合成时整张图是黑的，但 PrintWindow
+      返回 true、像素全 0，看起来"成功"了。
+    · 被弹窗吃掉的输入：试玩模式提示出现时，点击和按键都不进游戏。
+      这个弹窗来自实例启动参数里的 --demo，不是模组造成的。
+    正解: 先 SetForegroundWindow + 点击窗口内部一次让它合成，再把鼠标移出
+    窗口（避免 tooltip），最后 CopyFromScreen；并对截图中心像素做"是不是纯黑"
+    的自检，黑了就明确报出来，而不是当成成功。
+
+34. 排查"是不是我写的"要先看证据链
+    被问"试玩提示是模组加的吗"时，正确顺序是：先在源码里搜 demo/试玩
+    （没有），再查实例启动参数（26.3-Fabric.json 里两处 "--demo"）。
+    结论是启动器参数导致的，与模组无关。先给证据，再给结论。
+
+
+七、第三轮修复（两个 mixin 功能"看起来没生效"）的真实原因
+----------------------------------------------------------------
+
+35. 先分清"没注入"和"注入了但判定为假"，别急着改代码
+    现象: 烟花冷却、雨天睡觉都"没效果"，而窗口锁定正常。
+    它们的唯一共同点是都走 mixin，很容易被当成"mixin 没生效"。
+    做法: 加 -Dmixin.debug.export=true 让 Mixin 把转换后的类导出到
+    .mixin.out，再用 javap 看目标方法里有没有 handler 调用。
+    结论: 两个注入都在（canSleep、useItem/useItemOn 都调用了我的 handler）。
+    于是问题范围立刻缩小到"判定条件"，而不是注入配置。
+    这一步省掉的返工，比它花的时间多得多。
+
+36. 26.3 的天气是数据 + 属性，不是 level.dat 里的旧字段
+    想在测试里制造下雨，我先把 level.dat 的 raining/rainTime 写进去，
+    游戏启动后照样是晴天——因为 26.3 把天气搬到了 WeatherData
+    （SavedData）里，客户端则是靠 ClientboundGameEventPacket 的
+    START_RAINING / STOP_RAINING / RAIN_LEVEL_CHANGE 来设置雨量的。
+    教训: 跨版本改世界状态前，先确认这个状态"现在存在哪里"。
+    判据: 找 setRainLevel 的调用方，只有 ClientPacketListener 和 Level，
+    说明客户端雨量只由数据包驱动。
+
+37. 服务端改了，客户端不一定知道——判定恰恰发生在客户端
+    我用服务端 WeatherData 把雨打开了，服务端 isRaining()=true，
+    但客户端 rainLevel 仍是 0.0，因为那条数据包没有发。
+    而 canSleep 是在客户端做预测、也在服务端做判定，
+    两边读到的天气可能不一致。
+    教训: 调试"跟世界状态有关的功能"时，必须分别打印客户端和服务端的值。
+    只看一边会得出完全错误的结论。
+
+38. 探针要打印"判定用的那三个值"，不要打印"我以为是原因的值"
+    真正定位问题的那行日志是:
+      probe: switch=true raining=false rainLevel=0.0 weather=true darkOutside=false
+    它一次性排除了"开关没开""维度不支持""天没黑"三种猜测，
+    把问题锁定在 raining=false 上。
+    如果只打印 allowsSleep 的最终结果，会一直在猜。
+
+39. 自动化驱动不了 UI 时，把验证搬进进程内
+    这台机器上注入的按键会被中文输入法吞掉，试玩弹窗又会吃掉第一次点击，
+    所以"模拟人手点击"始终不稳定。
+    改用进程内自检：直接调用 ClientFeatures.blocksItemUse 两次、
+    直接把雨打开再读回 allowsSleep，结果写进日志。
+    实测输出: firstUseBlocked=false / secondUseBlocked=true / remaining=3s
+              rain set -> client isRaining=true, allowsSleep=true
+    这种验证比截图可靠，而且可以重复执行。
+
+40. 命中率最高的坑：把"用户测试时恰好没下雨"当成功能失效
+    用户报告"下雨就能睡觉没成功"，而探针显示当时 raining=false。
+    也就是说那一次测试环境里根本没有下雨，功能没有机会生效。
+    教训: 报"某功能无效"时，先确认触发条件在测试时真的成立，
+    否则会去修一个没坏的东西。这一条对"依赖环境状态"的开关尤其重要。
+
+41. 诊断代码要有明确的移除步骤
+    这一轮加了 6 处临时日志与两段自检代码。修完后逐处删除，
+    并用 grep 确认 selftest/debugProbe/firework check 等字样已归零，
+    再重新构建真机启动一次，确认删除没有留下未使用的 import 或断链。
+    临时诊断留在发布代码里，是下一轮排查的噪声来源。
+
+
+八、流程
+----------------------------------------------------------------
+
+24. 每次改文件前自动备份成 zip + 操作说明 txt
+    这次一共生成 9 个备份点。好处不是"能回滚"（实际没回滚过），
+    而是每次改动前被迫写一句"我接下来要做什么"，
+    很多次在这一步就发现思路不对。
+
+25. 截图验收要先把目标窗口切到前台
+    截图接口抓的是当前桌面；后台窗口会被别的窗口遮住，
+    连着两次抓到的是聊天窗口而不是游戏窗口。
+    先 switch 到 Minecraft 窗口再截图。
+    （更完整的做法见第 33 条：还要点击窗口内部一次，否则 GL 表面是黑的。）
+
+26. 程序化验证比肉眼可靠
+    窗口锁定是否生效，用 Win32 MoveWindow 强行改尺寸再读回 GetWindowRect，
+    比截图对比可靠得多：开锁 → 尺寸不变，关锁 → 尺寸变化，
+    一次就把"到底有没有生效"变成确定的事实。

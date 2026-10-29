@@ -1,0 +1,43 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# 本地开发用的构建环境（JDK、Gradle 发行包、游戏运行目录等，体积很大且与机器相关）
+_build/
+
+# 交付包：由 tools/package.py 生成，每次都可重建
+dist/
+
+# 每次改动前的源码备份
+更多开关功能工程备份/
+
+# 与本模组无关的本地资料
+我的世界skill261029/
+
+# 本机沙箱的会话上下文（含本机路径与调试循环），只用于本地开发与交付包
+mod_context.md
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.ipr
+*.iws
+
+# 系统与编辑器临时文件
+.DS_Store
+Thumbs.db
+*~
+*.swp
+
+# 游戏运行产物（若把游戏目录放在工程内）
+run/
+logs/
+crash-reports/
+screenshots/
+
+# Java
+*.class
+hs_err_pid*.log
+replay_pid*.log
