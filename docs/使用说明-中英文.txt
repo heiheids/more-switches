@@ -186,9 +186,10 @@ J 在原版里没有绑定任何功能，不会拿走任何键。
 十二、功能九: 关闭资源包警告
 ----------------------------------------------------------------
 开启后: 启用"版本不匹配"的资源包时，不再弹出"这个资源包是为其他版本的
-Minecraft 制作的，可能无法正常工作"的确认框，直接启用。
+Minecraft 制作的，可能无法正常工作"的确认框，直接启用；
+资源包列表里那个"不兼容/仅适用于旧版本"的红色标记也一并消失。
 
-说明: 只是跳过这个确认框，资源包照常加载。如果资源包确实缺失或损坏，
+说明: 只是跳过警告，资源包照常加载。如果资源包确实缺失或损坏，
 那是另一套检查，仍然会正常提示。
 
 适用场景: 一直在用某个跨版本资源包，每次切换/重载都要点一次确认很烦。
@@ -206,10 +207,13 @@ Minecraft 制作的，可能无法正常工作"的确认框，直接启用。
 
 十四、功能十一: 关闭新手教程
 ----------------------------------------------------------------
-开启后: 不再弹出任何新手教程提示。
+开启后: 不再弹出任何新手教程提示，也不再提醒"新配方已解锁"。
 
-说明: 从源头阻止教程启动，所以"按 W 走路""按空格跳跃""打树"
-"打开背包""合成木板"这一整套提示都不会出现，而不是逐个隐藏。
+说明: 两部分一起关闭。
+  · 新手教程: 从源头阻止教程启动，"按 W 走路""按空格跳跃""打树"
+    "打开背包""合成木板"这一整套提示都不会出现，而不是逐个隐藏
+  · 配方更新提醒: 那个"新配方已解锁"的弹出提示也不再出现；
+    配方本身照常注册、照常出现在配方书里，只是不弹窗告诉你
 
 适用场景: 已经熟悉游戏，不想每次新建世界都被提示一遍。
 
@@ -520,7 +524,8 @@ not emit light (stone, a sword) does nothing.
 12. Switch 9 — Skip Pack Warning
 ----------------------------------------------------------------
 On: enabling a resource pack built for another Minecraft version no longer asks
-"this pack may not work correctly" for confirmation; it is enabled straight away.
+"this pack may not work correctly" for confirmation; it is enabled straight away,
+and the red "incompatible / made for an older version" marker disappears as well.
 
 Note: only the confirmation is skipped. The pack loads as usual, and a pack that is
 actually missing or broken is still reported by the separate checks that look for it.
@@ -537,11 +542,14 @@ hay bale under it) disappears too.
 
 14. Switch 11 — No Tutorial
 ----------------------------------------------------------------
-On: no tutorial prompts of any kind appear.
+On: no tutorial prompts of any kind appear, and the "new recipe unlocked" reminder
+is gone as well.
 
-Note: the tutorial is stopped at its source, so the whole set — walk, jump, punch a
-tree, open the inventory, craft planks — never appears, rather than each toast being
-hidden individually.
+Note: two things are covered together.
+  - the tutorial itself is stopped at its source, so the whole set — walk, jump,
+    punch a tree, open the inventory, craft planks — never appears
+  - the "new recipe unlocked" pop-up is dropped too; the recipe is still registered
+    and still shows in the recipe book, you are simply not interrupted about it
 
 
 15. Switch 12 — Survival Fake Players

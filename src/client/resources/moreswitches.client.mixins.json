@@ -12,7 +12,9 @@
     "MixinLevelRendererLightPreview",
     "MixinPackCompatibility",
     "MixinCampfireBlock",
-    "MixinTutorial"
+    "MixinTutorial",
+    "MixinPackSelectionEntry",
+    "MixinRecipeToast"
   ],
   "injectors": {
     "defaultRequire": 1

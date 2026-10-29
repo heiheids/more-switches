@@ -70,7 +70,9 @@ Loom 配置要点: 26.x 的插件 id 是 net.fabricmc.fabric-loom（没有 -rema
   light/ClientHeldLight           功能七/八：光源位置（需要相机与准星，故在客户端源集）
   mixin/MixinLightCoordsUtil      功能八：把模拟光并入方块光照
   mixin/MixinLevelRendererLightPreview  功能七：世界空间绘制青色数字
-  mixin/MixinPackCompatibility    功能九：跳过资源包版本警告
+  mixin/MixinPackCompatibility    功能九：isCompatible 兜底
+  mixin/MixinPackSelectionEntry   功能九：让列表把包视为 COMPATIBLE（真正生效的一处）
+  mixin/MixinRecipeToast          功能十一的补充：去掉"新配方已解锁"弹窗
   mixin/MixinCampfireBlock        功能十：取消篝火烟雾
   mixin/MixinTutorial             功能十一：阻止教程启动
   feature/SimpleSwitchModule      只读设置、不做每帧工作的开关通用模块
@@ -278,6 +280,12 @@ handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
   注入 isCompatible 的 HEAD 返回 true，于是走"直接启用"的分支，不再弹框。
   只跳过提示，资源包照常加载；包真的缺失/损坏由另一条存在性检查处理，不受影响。
 
+  补充（第一版漏掉了真正的入口）:
+  光改 isCompatible 不够。资源包列表拿的是 Entry.getCompatibility() 返回的枚举值，
+  直接和 COMPATIBLE 比较来决定要不要显示"不兼容"标记与确认框，
+  并不经过 isCompatible()。所以还要注入 PackSelectionModel$EntryBase.getCompatibility，
+  让它返回 COMPATIBLE，这样标记和弹框才会一起消失。
+
 功能十（关闭篝火烟雾）:
   CampfireBlock.makeParticles 是普通篝火、灵魂篝火、干草捆信号篝火共同的
   产烟入口。在 HEAD 取消，一次覆盖全部三种，不必事后按粒子类型过滤。
@@ -288,6 +296,11 @@ handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
   这一点很关键: Tutorial 的 tick / onMouse / onInput / onGetItem / stop
   每一个都在开头判空直接返回，所以取消 start 不会引发空指针。
   从源头掐断，比逐个隐藏 TutorialToast 更彻底。
+
+  但"新配方已解锁"不属于教程: 它是 RecipeToast，由
+  ClientPacketListener.handleRecipeBookAdd 在收到新配方时调用
+  RecipeToast.addOrUpdate 弹出的。所以另注入 RecipeToast.addOrUpdate 的 HEAD，
+  让关闭教程的开关同时取消它，配方本身仍然注册、仍在配方书里。
 
 十一、界面滚动
 ----------------------------------------------------------------
