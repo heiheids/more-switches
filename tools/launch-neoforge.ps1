@@ -123,9 +123,6 @@ $commandLine = '"' + $Java + '" ' + ($quoted -join ' ')
 
 Write-Host ("launching: " + $Java)
 Write-Host ("args    : " + $arguments.Count)
-$argDump = Join-Path $runDir 'argdump.txt'
-($arguments -join "`n") | Set-Content -LiteralPath $argDump -Encoding UTF8
-
 $cmd = '/c ""' + $Java + '" ' + ($quoted -join ' ') + ' > "' + $out + '" 2> "' + $err + '""'
 Start-Process -FilePath 'cmd.exe' -ArgumentList $cmd -WorkingDirectory $runDir -WindowStyle Minimized | Out-Null
 

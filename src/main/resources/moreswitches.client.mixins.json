@@ -13,7 +13,8 @@
     "MixinTutorial",
     "MixinPackSelectionEntry",
     "MixinRecipeToast",
-    "MixinSoundEngine"
+    "MixinSoundEngine",
+    "MixinLocalPlayerDrop"
   ],
   "injectors": {
     "defaultRequire": 1

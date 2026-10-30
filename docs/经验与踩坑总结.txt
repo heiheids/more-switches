@@ -485,6 +485,40 @@
     且 neoFormVersion 是 20240808.144430（不带 1.21.1- 前缀）。
 
 
+70. 注入目标写错，进游戏时才炸
+    迁移后停在标题界面一切正常，一进世界就崩溃:
+    InvalidInjectionException: could not find any targets matching 'dropItem'
+    原因: 1.21.1 的 MultiPlayerGameMode 根本没有 dropItem，
+    Q 键走的是 LocalPlayer.drop(boolean)。
+    为什么之前没发现: 那个类只有进世界才会加载，
+    Mixin 在应用时才检查目标，所以标题界面测不出问题。
+    做法: 写一个脚本把每个 @Inject 的目标方法名和 javap 的方法列表比对，
+    编译前就把错误找出来（tools/nf_check_mixins.py）。
+    教训: 「启动不崩」不等于「运行不崩」，目标类懒加载的 mixin 必须单独核对。
+
+71. 调试用的写文件失败，会让启动脚本静默中止
+    启动脚本里有一句把参数 dump 到 argdump.txt。
+    后来实例目录变成不可写，这句抛 UnauthorizedAccessException，
+    整个脚本在启动 java 之前就停了。
+    表现是「没有任何日志、没有窗口、也没有报错」——极难定位。
+    教训: 调试辅助代码不能放在主流程的关键路径上，
+    要么 try/catch 包住，要么只写到自己可控的目录。
+
+72. 沙箱里「能启动」和「能不能写实例目录」是两件事
+    同一个启动脚本，在宿主 PowerShell 里跑没问题，
+    在沙箱 bash 里跑会因 config/fml.toml 不可写而失败
+    （AccessDeniedException: fml.toml）。
+    原因: 沙箱只允许写工作区，实例目录在它之外。
+    做法: 启动游戏这类要写游戏目录的操作，一律走宿主 PowerShell；
+    bash 只用来编译、跑测试、打包。
+
+73. 「进入世界」必须作为独立验收步骤
+    这次崩溃发生在世界加载完成、MultiPlayerGameMode 首次被使用时。
+    之前只验证到「模组注册成功 + 标题界面能打开设置界面」，
+    所以漏掉了。
+    教训: 涉及游戏内行为的 mixin，验收标准必须包含「真的进一次世界」。
+
+
 九、流程
 ----------------------------------------------------------------
 

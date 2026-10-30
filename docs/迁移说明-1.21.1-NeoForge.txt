@@ -77,6 +77,9 @@ NeoForge 1.21.1 迁移说明
                   -> ClickType.SWAP + handleInventoryMouseClick
   全屏开关        Minecraft.toggleFullscreen
                   -> Window.toggleFullScreen（1.21.1 的全屏逻辑在 Window 上）
+  丢弃物品        MultiPlayerGameMode.dropItem
+                  -> LocalPlayer.drop(boolean)（1.21.1 的 GameMode 没有 dropItem，
+                     写错会在进世界时崩溃）
   药水粒子        ClientLevel.doAddParticle(ParticleOptions, boolean, boolean, double x6)
                   -> ClientLevel.addParticle(ParticleOptions, boolean, double x6)
   光照采样        LightCoordsUtil.getLightCoords + BlockAndLightGetter
@@ -115,6 +118,7 @@ NeoForge 1.21.1 迁移说明
 
 五、构建与运行
 ----------------------------------------------------------------
+  校验    python tools/nf_check_mixins.py     # 核对每个 @Inject 的目标方法是否存在
   编译    python tools/nf_compile.py          # 反混淆 jar 需先存在
   测试    python tools/nf_test.py
   打包    python tools/nf_package.py
