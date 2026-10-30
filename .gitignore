@@ -41,3 +41,6 @@ screenshots/
 *.class
 hs_err_pid*.log
 replay_pid*.log
+
+# Python bytecode from the build helper scripts
+tools/__pycache__/
