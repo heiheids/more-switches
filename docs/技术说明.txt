@@ -268,8 +268,17 @@ handler$xxx$moreswitches$hideEffectParticles 调用并检查 isCancelled。
   一比较就永远不相等，于是每次都提前返回，光永远烘焙不进去。
   这正是这一版之前"重建在触发但画面没变化"的原因。
 
-  必须让网格重建: 光源跨方块时，对光源所在区块及其邻居（3×3×3）调用
-  Minecraft.levelExtractor.setSectionDirty(x, y, z)。
+  必须让网格重建: 光源移动时用 Minecraft.levelExtractor.setBlocksDirty
+  标记光源射程覆盖的方块范围，让 extractor 重建这些方块所在的区块。
+
+  为什么用 setBlocksDirty 而不是 setSectionDirty:
+  区块宽 16 格，按区块标记意味着每走 16 格光才跳一次，看起来一顿一顿的。
+  setBlocksDirty 给的是精确方块范围，光就能连续跟随玩家；
+  受影响的区块由 extractor 自己换算，不必手算。
+
+  节流: 最多每 2 tick 重建一次（约 100 毫秒）。
+  按 20 tick/秒，光在走动后 100 毫秒内追上，观感是连续的，
+  同时重建开销有上限，跑再快也不会每帧都重建。
   注意入口是 levelExtractor，不是 ClientLevel.setSectionDirtyWithNeighbors：
   26.3 的区块网格调度在新的 extract 管线里，走 Level 那条路到不了。
   火把射程 13 < 16，所以 3×3×3 已覆盖全部受影响区块。

@@ -3,29 +3,34 @@ package com.heishandashu.moreswitches.client.feature;
 import com.heishandashu.moreswitches.MoreSwitchesMod;
 import com.heishandashu.moreswitches.client.light.ClientHeldLight;
 import com.heishandashu.moreswitches.config.SwitchIds;
+import com.heishandashu.moreswitches.light.LightFalloff;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Keeps the simulated light baked into the nearby section meshes.
+ * Keeps the simulated light baked into the nearby section meshes, smoothly following the player.
  *
  * <p>Minecraft bakes block light into a section's vertex data when that section is meshed, and only
- * re-meshes when something marks the section dirty. {@code MixinLightCoordsUtil} changes what the
- * mesher samples, but on its own that never shows up: the surrounding sections were already meshed
- * before the light existed, so the picture stays as it was.</p>
+ * re-meshes when something marks the area dirty. {@code MixinLightCoordsUtil} changes what the mesher
+ * samples, but on its own that never shows up: those sections were already meshed before the light
+ * moved, so the picture stays as it was.</p>
  *
- * <p>The dirty request must go to {@code Minecraft.levelExtractor}, not to the level. In 26.3 the
- * section meshes are scheduled by the extractor; marking sections dirty through the level does not
- * reach it, which is why an earlier version of this switch rebuilt nothing.</p>
+ * <p>The area is marked with {@code setBlocksDirty} rather than by dirtying whole sections. That
+ * matters for smoothness: a section is 16 blocks wide, so dirtying sections only makes the light jump
+ * once every 16 blocks of walking, which reads as a stutter. A block range is exact, so the light
+ * follows the player continuously. The extractor expands the range to the sections it touches
+ * itself.</p>
  *
- * <p>The work happens only when the light crosses a block boundary, never per frame, and covers the
- * light's section plus its neighbours — a torch reaches 13 blocks, which cannot leave that 3×3×3
- * box.</p>
+ * <p>To keep that affordable, a rebuild is queued at most once every {@link #REBUILD_INTERVAL_TICKS}
+ * ticks. At 20 ticks per second the light catches up within 100 ms of walking, which looks
+ * continuous, while the re-mesh cost stays bounded no matter how fast the player moves.</p>
  */
 public final class MovingLightModule implements ClientFeature {
+
+    /** Rebuild at most this often; 2 ticks is 100 ms and reads as instant. */
+    private static final int REBUILD_INTERVAL_TICKS = 2;
 
     /** Opt-in diagnostics: how far the effect got, printed every few seconds. */
     private static final String DEBUG_PROPERTY = "moreswitches.debugLight";
@@ -34,21 +39,23 @@ public final class MovingLightModule implements ClientFeature {
 
     private static int bakedMeshes;
 
-    private static int dirtySections;
+    private static int dirtyRanges;
 
     private static long lastReport;
 
     private boolean active;
 
-    /** Section the light was last seen in, or null when it was off or unavailable. */
-    private SectionPos lastSection;
+    private int cooldown;
+
+    /** Block the light was centred on last time a rebuild was queued, or null. */
+    private BlockPos lastCentre;
 
     /**
      * Counts one mesh that baked the simulated light.
      *
      * <p>Called from the light-coords injection. A growing number means the mesher is seeing the
-     * simulated brightness; a number stuck at zero means no re-meshed section contains a block the
-     * light could brighten.</p>
+     * simulated brightness; a number stuck at zero means the rebuilt sections hold no block the light
+     * could brighten.</p>
      */
     public static void noteBakedMesh() {
         bakedMeshes++;
@@ -68,9 +75,10 @@ public final class MovingLightModule implements ClientFeature {
             return;
         }
         this.active = enabled;
-        // Turning the switch off has to refresh the meshes too, otherwise the light stays baked in
+        // Turning the switch off has to refresh the area too, otherwise the glow stays baked in
         // until the player happens to walk far enough for those sections to be rebuilt.
-        this.lastSection = null;
+        this.lastCentre = null;
+        this.cooldown = 0;
         MoreSwitchesMod.LOGGER.info("[{}] switch '{}' -> {}",
                 MoreSwitchesMod.MOD_ID, SwitchIds.MOVING_LIGHT, enabled);
     }
@@ -81,46 +89,46 @@ public final class MovingLightModule implements ClientFeature {
         }
         Vec3 centre = ClientHeldLight.centre(client);
         int emission = ClientHeldLight.emission(client);
+
         if (centre == null || emission <= 0) {
-            if (this.lastSection != null) {
+            if (this.lastCentre != null) {
                 // The player put the light away: clear the glow that was baked in.
-                invalidate(client, this.lastSection);
-                this.lastSection = null;
+                invalidate(client, this.lastCentre, LightFalloff.reach(14));
+                this.lastCentre = null;
             }
             return;
         }
 
-        SectionPos section = SectionPos.of(BlockPos.containing(centre));
-        if (section.equals(this.lastSection)) {
+        if (this.cooldown > 0) {
+            this.cooldown--;
             return;
         }
-        if (this.lastSection != null) {
-            invalidate(client, this.lastSection);
+
+        BlockPos current = BlockPos.containing(centre);
+        if (current.equals(this.lastCentre)) {
+            return;
         }
-        invalidate(client, section);
-        this.lastSection = section;
+        invalidate(client, current, LightFalloff.reach(emission));
+        this.lastCentre = current;
+        this.cooldown = REBUILD_INTERVAL_TICKS;
         report(emission, centre);
     }
 
     /**
-     * Re-meshes one section and its neighbours so the baked light is recomputed.
+     * Marks every block the light can reach so the extractor rebuilds the sections that contain them.
      *
-     * <p>Three by three by three, because the reach of a torch can spill into a neighbouring section
-     * on every axis.</p>
+     * <p>The range is the light's reach in each direction, which is exactly the volume whose baked
+     * brightness can change when the light moves by one block. Marking less would leave stale light at
+     * the edge of the radius; marking more would rebuild sections nothing changed in.</p>
      */
-    private static void invalidate(Minecraft client, SectionPos section) {
+    private static void invalidate(Minecraft client, BlockPos centre, int reach) {
         if (client.levelExtractor == null) {
             return;
         }
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    client.levelExtractor.setSectionDirty(
-                            section.x() + dx, section.y() + dy, section.z() + dz);
-                    dirtySections++;
-                }
-            }
-        }
+        client.levelExtractor.setBlocksDirty(
+                centre.getX() - reach, centre.getY() - reach, centre.getZ() - reach,
+                centre.getX() + reach, centre.getY() + reach, centre.getZ() + reach);
+        dirtyRanges++;
     }
 
     private static void report(int emission, Vec3 centre) {
@@ -133,11 +141,11 @@ public final class MovingLightModule implements ClientFeature {
         }
         lastReport = now;
         MoreSwitchesMod.LOGGER.info(
-                "[light-move] emission={} centre={},{},{} dirtySections={} bakedMeshes={}",
+                "[light-move] emission={} centre={},{},{} dirtyRanges={} bakedMeshes={}",
                 emission,
                 String.format("%.1f", centre.x),
                 String.format("%.1f", centre.y),
                 String.format("%.1f", centre.z),
-                dirtySections, bakedMeshes);
+                dirtyRanges, bakedMeshes);
     }
 }
