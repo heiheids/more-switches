@@ -1,20 +1,26 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'java'
+    id 'net.neoforged.moddev' version '2.0.148'
 }
 
 base {
-    archivesName = project.archives_base_name
+    archivesName = project.mod_id
 }
 
-repositories {
-    maven {
-        name = 'TerraformersMC'
-        url = 'https://maven.terraformersmc.com/releases/'
+// NeoForge 1.21.1 runs on Java 21. The toolchain keeps the build reproducible no matter which JDK
+// starts Gradle.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
-// The pure-Java logic (cooldown timing) is tested with JUnit 5. No Minecraft types are involved,
-// so the tests run without launching the game.
+neoForge {
+    version = project.neo_version
+}
+
+// The pure-Java logic (cooldown timing, slot arithmetic, sound matching) is tested with JUnit 5.
+// No Minecraft types are involved, so the tests run without launching the game.
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -29,48 +35,44 @@ test {
     }
 }
 
-loom {
-    // Keeps screens, key bindings and window handling out of the server jar.
-    splitEnvironmentSourceSets()
-
-    mods {
-        "moreswitches" {
-            sourceSet sourceSets.main
-            sourceSet sourceSets.client
-        }
-    }
-}
-
-dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-
-    // Mod Menu is present in the test instance; never bundled into our jar.
-    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
-}
-
-processResources {
-    def props = [version: project.version]
-    inputs.properties props
-    filesMatching('fabric.mod.json') {
-        expand props
-    }
-}
-
 tasks.withType(JavaCompile).configureEach {
     it.options.encoding = 'UTF-8'
-    it.options.release = 25
+    it.options.release = 21
 }
 
-java {
-    withSourcesJar()
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+// Expands the version into neoforge.mods.toml so the metadata always matches the jar.
+var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : project.minecraft_version,
+            minecraft_version_range: project.minecraft_version_range,
+            neo_version            : project.neo_version,
+            neo_version_range      : project.neo_version_range,
+            loader_version_range   : project.loader_version_range,
+            mod_id                 : project.mod_id,
+            mod_name               : project.mod_name,
+            mod_license            : project.mod_license,
+            mod_version            : project.mod_version,
+            mod_authors            : project.mod_authors,
+            mod_description        : project.mod_description
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
 }
+
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
 
 jar {
+    manifest {
+        attributes(
+                'Implementation-Title': project.mod_name,
+                'Implementation-Version': project.version,
+                'Implementation-Vendor': project.mod_authors
+        )
+    }
     from('LICENSE') {
-        rename { "${it}_${project.name}" }
+        rename { "${it}_${project.mod_id}" }
     }
 }

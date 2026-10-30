@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.heishandashu.moreswitches.MoreSwitchesMod;
 import com.heishandashu.moreswitches.config.ModSettings;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
@@ -120,7 +120,7 @@ public final class ModLang {
     }
 
     private static Map<String, String> readTable(ResourceManager manager, String code) {
-        Identifier resourceId = MoreSwitchesMod.id("lang/" + code + ".json");
+        ResourceLocation resourceId = MoreSwitchesMod.id("lang/" + code + ".json");
         Map<String, String> table = new HashMap<>();
         try {
             // getResourceStack keeps every pack's copy, ours last; the last readable copy wins so

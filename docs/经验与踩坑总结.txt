@@ -431,6 +431,60 @@
     教训: "多久更新一次"由标记的粒度决定，而不是由帧率决定。
 
 
+63. FML 找不到 minecraft 模块时，堆栈只给你一句 No value present
+    NeoForge 启动到最后抛 java.util.NoSuchElementException: No value present。
+    堆栈指向 LaunchServiceHandlerDecorator，看不出在找什么。
+    反编译 CommonLaunchHandler.runTarget 才看到它做的是
+        layer.findModule("minecraft").orElseThrow()
+    也就是「模块层里没有名为 minecraft 的模块」。
+    做法: 给反混淆 jar 写 Automatic-Module-Name: minecraft。
+    教训: 这种 Optional.orElseThrow() 崩溃一定要反编译看它取的是什么，
+    异常信息本身永远不含线索。
+
+64. 同一个 jar 不能同时在 module path 和 classpath 上
+    把 minecraft jar 放进 -p 之后报
+    ResolutionException: Module mixin_synthetic reads more than one module named minecraft
+    因为官方安装里那份也在模块层里。
+    正解: 游戏 jar 只放 classpath，模块路径只放 bootstrap 那几个。
+
+65. 编译目标和运行 JDK 必须一致
+    用 JDK 25 编译，游戏跑在 Java 21，运行时报
+    UnsupportedClassVersionError: class file version 69.0, runtime up to 65.0。
+    正解: javac --release 21。
+    副坑: 在 @argfile 里写 "-release 21" 会报「无效的标记」，
+    必须拆成 "--release" 和 "21" 两个参数。
+
+66. 反混淆映射有方向
+    AutoRenamingTool 加 --reverse 之后，生成的 jar 里类名还是 a/b/c，
+    看起来「成功了」其实什么都没改。
+    正解: 先看映射文件第一行（tsrg2 left right，下面 a com/mojang/math/Axis），
+    确认左边是混淆名，就不要再加 --reverse。
+
+67. Mixin 找不到目标会直接让游戏起不来
+    迁移后有 8 个 mixin 的目标方法在 1.21.1 上不存在，
+    例如 Minecraft.toggleFullscreen（1.21.1 在 Window.toggleFullScreen）、
+    ClientLevel.doAddParticle（1.21.1 是 addParticle 的另一个重载）。
+    报错是 InvalidInjectionException: could not find any targets matching ...
+    做法: 迁移 Mixin 前先 javap 把每个目标类的方法列表打出来核对。
+    这也是 require = 1 的价值: 目标写错立刻暴露，而不是静默失效。
+
+68. 环境限制要一次性摸清，别逐个试
+    这次踩到的执行环境限制:
+    · bash 起的 Gradle 守护进程必然失败，只能在宿主 PowerShell 里跑
+    · PowerShell 脚本非 ASCII 会被当 GBK 解出乱码路径
+    · 执行策略禁止直接调用 .ps1（报「禁止运行脚本」），要 -ExecutionPolicy Bypass
+    · Start-Process 的 -RedirectStandardOutput 有时不写文件，
+      而 cmd 的 > 重定向也可能拿不到；前台执行最稳
+    教训: 先把「怎么拿到日志」这件事解决，再开始调参数。
+    这次就是先卡在取不到输出上，白绕了很久。
+
+69. 手工拼启动参数不如照着官方 JSON 抄
+    一开始凭印象写 --fml.forgeVersion / --fml.mcpVersion，全错。
+    正确参数名从版本 JSON 的 arguments.game 里读:
+    --fml.neoForgeVersion / --fml.fmlVersion / --fml.mcVersion / --fml.neoFormVersion，
+    且 neoFormVersion 是 20240808.144430（不带 1.21.1- 前缀）。
+
+
 九、流程
 ----------------------------------------------------------------
 

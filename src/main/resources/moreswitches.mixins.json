@@ -2,9 +2,9 @@
   "required": true,
   "minVersion": "0.8",
   "package": "com.heishandashu.moreswitches.mixin",
-  "compatibilityLevel": "JAVA_25",
+  "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "MixinBedRule"
+    "MixinRainSleep"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -4,7 +4,7 @@
 Layout inside the zip:
 
     更多开关功能/
-        more-switches-1.0.0.jar            可直接放进 mods 的成品
+        moreswitches-2.0.0.jar             可直接放进 mods 的成品（NeoForge 1.21.1）
         源码/                              build.gradle 与 src/
         文档/使用说明-中英文.txt
         文档/技术说明.txt
@@ -52,6 +52,9 @@ DOC_RENAMES = {
     "经验与踩坑总结.txt": "工作中有价值的经验和踩坑总结.txt",
     "界面-中文.png": "界面-中文.png",
     "界面-英文.png": "界面-英文.png",
+    "界面-1.21.1-NeoForge.png": "界面-1.21.1-NeoForge.png",
+    "界面-1.21.1-开关开启.png": "界面-1.21.1-开关开启.png",
+    "迁移说明-1.21.1-NeoForge.txt": "迁移说明-1.21.1-NeoForge.txt",
 }
 
 
@@ -61,11 +64,12 @@ def fail(message: str) -> None:
 
 
 def find_jar() -> Path:
-    libs = PROJECT_ROOT / "build" / "libs"
-    candidates = sorted(libs.glob("more-switches-*.jar"))
+    """The NeoForge jar produced by tools/nf_package.py."""
+    dist = PROJECT_ROOT / "_build" / "nf-dist"
+    candidates = sorted(dist.glob("moreswitches-*.jar"))
     jars = [c for c in candidates if not c.name.endswith("-sources.jar")]
     if not jars:
-        fail(f"no mod jar in {libs}; run the gradle build first")
+        fail(f"no mod jar in {dist}; run tools/nf_package.py first")
     return jars[-1]
 
 
@@ -109,7 +113,7 @@ def main() -> int:
         shutil.rmtree(DIST_DIR)
     DIST_DIR.mkdir(parents=True)
 
-    zip_path = DIST_DIR / f"{PACKAGE_NAME}-1.0.0.zip"
+    zip_path = DIST_DIR / f"{PACKAGE_NAME}-2.0.0.zip"
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         base = PACKAGE_NAME
         archive.write(jar, f"{base}/{jar.name}")
@@ -147,7 +151,7 @@ def main() -> int:
             mod_names = mod.namelist()
             for required in ("assets/moreswitches/lang/zh_cn.json",
                              "assets/moreswitches/lang/en_us.json",
-                             "fabric.mod.json",
+                             "META-INF/neoforge.mods.toml",
                              "moreswitches.mixins.json",
                              "moreswitches.client.mixins.json",
                              "assets/moreswitches/textures/icon.png"):

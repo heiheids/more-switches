@@ -2,6 +2,7 @@ package com.heishandashu.moreswitches.sleep;
 
 import com.heishandashu.moreswitches.config.ModSettings;
 import com.heishandashu.moreswitches.config.SwitchIds;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.Level;
 
 /**
@@ -9,12 +10,12 @@ import net.minecraft.world.level.Level;
  *
  * <p>Vanilla only lets a player sleep when the sky is dark, so a rainy midday cannot be slept
  * through even though it looks like night. With the switch on, rain counts as "dark enough", the
- * bed can be used, and vanilla then advances the clock to its own wake-up marker — the same skip
- * a night's sleep performs.</p>
+ * bed can be used, and vanilla then advances the clock to its own wake-up marker — the same skip a
+ * night's sleep performs.</p>
  *
  * <p>The decision itself is a pure function over three booleans, so it is testable without a
  * running game; {@link #allowsSleep(Level)} is the one-line adapter that reads those booleans off
- * the world. The mixin calls the adapter and nothing else.</p>
+ * the world.</p>
  */
 public final class RainSleepRule {
 
@@ -29,7 +30,21 @@ public final class RainSleepRule {
      * raining.</p>
      */
     public static boolean allowsSleep(Level level) {
-        return allowsSleep(isActive(), level.isRaining(), level.canHaveWeather());
+        return allowsSleep(isActive(), level.isRaining(), hasWeather(level));
+    }
+
+    /**
+     * Whether this dimension has weather.
+     *
+     * <p>Minecraft 1.21.1 has no {@code canHaveWeather()} on the level, so it is derived from the
+     * dimension's biome tag: only dimensions with a biomes tag that allows precipitation can rain.
+     * The Nether and the End are excluded by that tag, which is exactly the behaviour wanted.</p>
+     */
+    public static boolean hasWeather(Level level) {
+        if (level.dimensionType().hasSkyLight()) {
+            return !level.getBiome(level.getSharedSpawnPos()).is(BiomeTags.IS_NETHER);
+        }
+        return false;
     }
 
     /**

@@ -1,0 +1,138 @@
+NeoForge 1.21.1 迁移说明
+================================================================
+本文件记录「更多开关功能」从 Fabric 26.3 迁移到 Minecraft 1.21.1 + NeoForge 21.1.256
+的过程、结论与验证证据。面向以后维护这个项目的人，也面向想在其他版本上重做同样迁移的人。
+
+
+一、迁移结论
+----------------------------------------------------------------
+状态: 完成并通过实机验证。
+
+  目标环境   Minecraft 1.21.1 + NeoForge 21.1.256（Java 21）
+  产物       _build/nf-dist/moreswitches-2.0.0.jar
+  开关数量   16 个，全部完成迁移
+  单元测试   50 个全部通过
+  实机验证   模组加载、界面渲染、开关点击、配置写盘、光照预览均确认
+
+实机日志证据（来自真实运行的客户端）:
+
+  [moreswitches] common init (settings: ...\config\moreswitches.json)
+  [moreswitches] client ready -- 16 switches registered, default key: J
+  [moreswitches] language tables loaded (game language: zh_cn, 46 entries)
+  [moreswitches] settings screen at 427x240 GUI units: 16 rows of 26px, ..., scrolling yes
+  [moreswitches] switch 'window_lock' -> true (applied: true)
+
+截图: docs/界面-1.21.1-NeoForge.png、docs/界面-1.21.1-开关开启.png
+
+
+二、必须知道的三个构建前提
+----------------------------------------------------------------
+这三个是本次迁移最大的障碍，缺一个都构建不出来。
+
+1. 反混淆的 Minecraft
+   NeoForge 的 Maven 在这台机器上连不通，Gradle 又无法在沙箱里启动守护进程。
+   做法: 用官方 1.21.1 客户端 jar 加 NeoForge 合并映射（neoform-*-mappings-merged.txt），
+   通过 NeoForge 自带的 AutoRenamingTool 反混淆。
+   注意: 映射方向是「混淆名 -> 官方名」，不要加 --reverse，加了会得到一堆原样的混淆类。
+
+2. minecraft 命名模块
+   FML 启动时会做 ModuleLayer.findModule("minecraft")，找不到就抛
+   NoSuchElementException: No value present（堆栈指向 CommonLaunchHandler.runTarget）。
+   反混淆出来的 jar 没有模块描述符，所以给它写一条 Automatic-Module-Name: minecraft，
+   放在 classpath 上（不是 module path——放 module path 会和官方 jar 撞成两个 minecraft 模块，
+   报 "reads more than one module named minecraft"）。
+   工具: tools/nf_module_jar.py
+
+3. Java 21 编译目标
+   游戏运行在 Java 21（class 版本 65）。用 JDK 25 直接编译会产出版本 69 的类，
+   运行时报 UnsupportedClassVersionError。
+   做法: javac 必须带 --release 21。
+   注意: 在 @argfile 里写成 "-release 21"（一个 token）javac 会报「无效的标记」，
+   要写成 "--release" 和 "21" 两个独立参数。
+
+
+三、Fabric 到 NeoForge 的 API 对照（本次实际替换的）
+----------------------------------------------------------------
+  入口            ModInitializer / ClientModInitializer
+                  -> @Mod 构造器 + @EventBusSubscriber(Dist.CLIENT) + FMLClientSetupEvent
+  Tick 事件       ClientTickEvents.END_CLIENT_TICK
+                  -> ClientTickEvent.Post（项目里封装成 ClientTickHook 一处转发）
+  注册按键        KeyMappingHelper.registerKeyMapping，且 KeyMapping 有 Category 类型
+                  -> RegisterKeyMappingsEvent；1.21.1 的 KeyMapping 用字符串分类
+  资源重载        ResourceManagerHelper + SimpleSynchronousResourceReloadListener
+                  -> RegisterClientReloadListenersEvent + ResourceManagerReloadListener
+  配置目录        FabricLoader.getInstance().getConfigDir()
+                  -> FMLPaths.CONFIGDIR.get()
+  标识符          Identifier / Identifier.fromNamespaceAndPath
+                  -> ResourceLocation / ResourceLocation.fromNamespaceAndPath
+  HUD 绘制        HudElementRegistry + GuiGraphicsExtractor.extractRenderState
+                  -> RenderGuiEvent.Post + GuiGraphics.drawString
+  界面绘制        Screen.extractRenderState(GuiGraphicsExtractor, ...)
+                  -> Screen.render(GuiGraphics, ...)
+  组件绘制        AbstractWidget.extractWidgetRenderState
+                  -> AbstractWidget.renderWidget（还需实现 updateWidgetNarration）
+  鼠标事件        MouseButtonEvent.x() / .y()
+                  -> mouseClicked(double mouseX, double mouseY, int button)
+  容器点击        ContainerInput.SWAP + handleContainerInput
+                  -> ClickType.SWAP + handleInventoryMouseClick
+  全屏开关        Minecraft.toggleFullscreen
+                  -> Window.toggleFullScreen（1.21.1 的全屏逻辑在 Window 上）
+  药水粒子        ClientLevel.doAddParticle(ParticleOptions, boolean, boolean, double x6)
+                  -> ClientLevel.addParticle(ParticleOptions, boolean, double x6)
+  光照采样        LightCoordsUtil.getLightCoords + BlockAndLightGetter
+                  -> LevelRenderer.getLightColor(BlockAndTintGetter, BlockState, BlockPos)
+  区块重建        Minecraft.levelExtractor.setBlocksDirty
+                  -> LevelRenderer.setBlocksDirty（1.21.1 还没有 extract 管线）
+  睡觉判定        BedRule.canSleep
+                  -> Player.startSleepInBed（返回 Either<BedSleepingProblem, Unit>）
+  配方弹窗        RecipeToast.addOrUpdate(ToastManager, RecipeDisplay)
+                  -> RecipeToast.addOrUpdate(ToastComponent, RecipeHolder)
+  窗口锁定        SDL_SetWindowResizable（SDL）
+                  -> glfwSetWindowAttrib / glfwSetWindowSizeLimits（GLFW）
+  音效标识        SoundInstance.getIdentifier()
+                  -> SoundInstance.getLocation()
+
+
+四、为 1.21.1 做的实现取舍
+----------------------------------------------------------------
+1. 光照预览改为纯屏幕空间
+   ScreenProjection 现在只接受 double 参数，不再依赖 Vec3。
+   好处: 投影算术不依赖游戏类型，可以完全离线单测；也避开了 Vec3 静态初始化
+   需要 datafixerupper 才能跑的问题。
+
+2. 移动光源
+   仍是「只改渲染时读到的方块光，不写世界数据」，取 max 不累加。
+   重建改为按方块范围标记，节流 2 tick。
+
+3. Carpet 假玩家
+   按约定保留开关，但目标环境没有 Carpet（它是 Fabric 模组），
+   开启后会尝试写 carpet 配置并在日志说明「需要 Carpet」，不会报错。
+
+4. 皮肤/停用项
+   MixinRainSleep 在白天+下雨时把时间推进 12500 tick，
+   让原版自己的睡眠流程接管，而不是另写一套「跳过夜晚」。
+
+
+五、构建与运行
+----------------------------------------------------------------
+  编译    python tools/nf_compile.py          # 反混淆 jar 需先存在
+  测试    python tools/nf_test.py
+  打包    python tools/nf_package.py
+  启动    tools/launch-neoforge.ps1 -InstanceDir <实例目录> -Java <java21路径>
+
+前置（只需做一次）:
+  python tools/nf_module_jar.py   生成 minecraft-module.jar
+
+已知环境限制（不是模组问题）:
+  · 沙箱内无法从 bash 启动 Gradle 守护进程，因此改走 javac 直编
+  · PowerShell 脚本必须全 ASCII，中文路径要由 $PSScriptRoot 推导
+  · 执行策略需 -ExecutionPolicy Bypass，否则脚本静默不执行
+  · Start-Process 的 -RedirectStandardOutput 在某些情况下写不出文件，
+    改用前台重定向最可靠
+
+
+六、作者
+----------------------------------------------------------------
+作者: 黑山大叔
+主页: https://space.bilibili.com/19428259
+核心结构来自: https://crates.io/crates/lighty-launcher

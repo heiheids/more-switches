@@ -1,6 +1,10 @@
 pluginManagement {
     repositories {
-        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        // The NeoForge maven is unreachable from some networks. A local mirror built from the
+        // Gradle cache keeps the build working offline; the remote stays listed for machines that
+        // can reach it.
+        maven { name = 'LocalMirror'; url = uri('_build/m2repo') }
+        maven { name = 'NeoForged'; url = 'https://maven.neoforged.net/releases' }
         mavenCentral()
         gradlePluginPortal()
     }

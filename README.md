@@ -1,6 +1,6 @@
 # 更多开关功能 (More Switches)
 
-Minecraft 26.3 · Fabric · Java 25
+Minecraft 1.21.1 · NeoForge 21.1.256 · Java 21
 
 作者: 黑山大叔 — https://space.bilibili.com/19428259
 核心结构来自: https://crates.io/crates/lighty-launcher
@@ -8,7 +8,10 @@ Minecraft 26.3 · Fabric · Java 25
 一页开关式的实用工具模组。按 **J** 打开设置界面，一行一个功能，
 右侧是左右拨动的开关（灰色=关，绿色=开）。
 
-![中文界面](docs/界面-中文.png)
+> 本版本已从 Fabric 26.3 迁移到 NeoForge 1.21.1，16 个开关全部完成。
+> 迁移过程与 API 对照见 [docs/迁移说明-1.21.1-NeoForge.txt](docs/迁移说明-1.21.1-NeoForge.txt)。
+
+![中文界面](docs/界面-1.21.1-NeoForge.png)
 
 | 行 | 功能 | 说明 |
 |---|---|---|
@@ -40,17 +43,22 @@ Minecraft 26.3 · Fabric · Java 25
 
 ## 安装
 
-1. 安装 Fabric Loader 0.19.5+ 与 Fabric API
-2. 把 `more-switches-*.jar` 放进 `.minecraft/mods/`
+1. 安装 Minecraft 1.21.1 + NeoForge 21.1.256（Java 21）
+2. 把 `moreswitches-2.0.0.jar` 放进 `.minecraft/mods/`
 3. 进游戏按 **J** 打开界面
 
 ## 构建
 
-需要 JDK 25。
+需要 JDK 21 运行游戏、JDK 25 编译（用 `--release 21` 产出 Java 21 类）。
+NeoForge 的 Maven 在部分网络下不可达，所以这里不依赖 Gradle 在线解析，
+而是用本地缓存的依赖 + 反混淆后的游戏 jar 直接编译：
 
 ```bash
-gradle build     # 产物在 build/libs/
-gradle test      # 运行单元测试，不需要启动游戏
+python tools/nf_module_jar.py   # 生成 minecraft 命名模块（只需一次）
+python tools/nf_compile.py      # 编译主代码与测试
+python tools/nf_test.py         # 运行单元测试，不需要启动游戏
+python tools/nf_package.py      # 产出可安装 jar 到 _build/nf-dist/
+python tools/package.py         # 打包交付 zip
 ```
 
 `tools/build.cmd` 是受限沙箱里用的构建脚本，JDK 与 Gradle 位置从环境变量
